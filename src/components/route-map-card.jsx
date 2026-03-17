@@ -99,7 +99,7 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
         <RouteCard route={route} />
 
         <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100">
-          <div ref={mapElementRef} className="h-[320px] w-full" />
+          <div ref={mapElementRef} className="h-[400px] w-full" />
 
           <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
             <Badge variant="brand">{route.name}</Badge>

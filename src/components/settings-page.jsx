@@ -1,5 +1,6 @@
 import { LoaderCircle, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FeatureModeSwitcher } from "./feature-mode-switcher";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
@@ -9,12 +10,14 @@ export function SettingsPage({ settings, onSave, homeHref }) {
   const [validationErrors, setValidationErrors] = useState([]);
   const [saveError, setSaveError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedMode, setSelectedMode] = useState("traffic");
 
   useEffect(() => {
     setDraft(cloneSettings(settings));
     setValidationErrors([]);
     setSaveError("");
     setIsSaving(false);
+    setSelectedMode(resolveInitialMode(settings));
   }, [settings]);
 
   if (!draft) {
@@ -33,7 +36,7 @@ export function SettingsPage({ settings, onSave, homeHref }) {
   }
 
   function addModule() {
-    const nextIndex = draft.modules.length + 1;
+    const nextIndex = draft.modules.filter((moduleItem) => moduleItem.mode === selectedMode).length + 1;
     const moduleId = `module-${Date.now()}`;
     setDraft((current) => ({
       ...current,
@@ -41,11 +44,13 @@ export function SettingsPage({ settings, onSave, homeHref }) {
         ...current.modules,
         {
           id: moduleId,
+          mode: selectedMode,
           name: `常用模組 ${nextIndex}`,
           origin: "",
           destination: "",
           mapZoom: 14,
-          routes: createDefaultRoutes()
+          routes: createDefaultRoutes(),
+          views: createDefaultTrafficViews()
         }
       ]
     }));
@@ -83,16 +88,27 @@ export function SettingsPage({ settings, onSave, homeHref }) {
     }
   }
 
+  const availableModes = Array.from(
+    new Set((draft.modules || []).map((moduleItem) => moduleItem.mode || "route"))
+  ).sort((left, right) => {
+    const order = { traffic: 0, route: 1 };
+    return (order[left] ?? 99) - (order[right] ?? 99);
+  });
+
+  const visibleModules = draft.modules.filter(
+    (moduleItem) => (moduleItem.mode || "route") === selectedMode
+  );
+
   return (
     <div className="space-y-4 pb-28">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Settings</p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-slate-950">
-            路線設定
+            模組設定
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            起點與終點改為模組共用，路線 A / B 只保留路徑策略、顏色與途經點。
+            先切換功能模式，再編輯該模式底下的模組。這樣 route 與 traffic 不會混在一起。
           </p>
         </div>
 
@@ -103,11 +119,26 @@ export function SettingsPage({ settings, onSave, homeHref }) {
 
       <Card>
         <CardContent className="space-y-4 p-4 sm:p-5">
+          <div className="grid gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              功能模式
+            </p>
+            <FeatureModeSwitcher
+              availableModes={availableModes}
+              activeMode={selectedMode}
+              onSelect={setSelectedMode}
+            />
+          </div>
+
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">常用通勤模組</p>
+              <p className="text-sm font-semibold text-slate-900">
+                {selectedMode === "traffic" ? "交流道觀測模組" : "路線比較模組"}
+              </p>
               <p className="mt-1 text-sm text-slate-600">
-                預設為上班、下班。必填欄位只有模組名稱、起點、終點。
+                {selectedMode === "traffic"
+                  ? "主要使用交通觀測模式。必填欄位是觀測點的緯度與經度。"
+                  : "必填欄位只有模組名稱、起點、終點。"}
               </p>
             </div>
             <Button variant="secondary" size="sm" onClick={addModule}>
@@ -134,7 +165,7 @@ export function SettingsPage({ settings, onSave, homeHref }) {
           ) : null}
 
           <div className="space-y-4">
-            {draft.modules.map((moduleItem, index) => (
+            {visibleModules.map((moduleItem, index) => (
               <ModuleEditor
                 key={moduleItem.id}
                 moduleItem={moduleItem}
@@ -145,9 +176,15 @@ export function SettingsPage({ settings, onSave, homeHref }) {
                 onChange={(updater) => updateModule(moduleItem.id, updater)}
                 onRemove={() => removeModule(moduleItem.id)}
                 allowRemove={draft.modules.length > 1}
-                title={`模組 ${index + 1}`}
+                title={`${selectedMode === "traffic" ? "觀測模組" : "路線模組"} ${index + 1}`}
               />
             ))}
+
+            {!visibleModules.length ? (
+              <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                目前這個功能模式還沒有模組。可直接按上方的「新增模組」。
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -223,21 +260,6 @@ function ModuleEditor({
           onChange={(value) => onChange((current) => ({ ...current, name: value }))}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Input
-            label="共用起點"
-            required
-            value={moduleItem.origin || ""}
-            onChange={(value) => onChange((current) => ({ ...current, origin: value }))}
-          />
-          <Input
-            label="共用終點"
-            required
-            value={moduleItem.destination || ""}
-            onChange={(value) => onChange((current) => ({ ...current, destination: value }))}
-          />
-        </div>
-
         <Input
           label="地圖縮放"
           optional
@@ -248,28 +270,74 @@ function ModuleEditor({
           }
         />
 
-        <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/80 p-4">
-          <p className="text-sm font-semibold text-slate-900">路線設定</p>
-          <p className="mt-1 text-sm text-slate-600">
-            起點與終點已在上方共用設定。下面只需要定義兩條路各自的名稱、顏色與途經點。
-          </p>
-        </div>
+        {moduleItem.mode === "traffic" ? (
+          <>
+            <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/80 p-4">
+              <p className="text-sm font-semibold text-slate-900">交通觀測點設定</p>
+              <p className="mt-1 text-sm text-slate-600">
+                請設定兩個你要觀察的交流道或路段中心點。首頁會顯示兩張獨立交通地圖。
+              </p>
+            </div>
 
-        {moduleItem.routes.map((route, routeIndex) => (
-          <RouteEditor
-            key={`${moduleItem.id}-${routeIndex}`}
-            route={route}
-            routeIndex={routeIndex}
-            onChange={(updater) =>
-              onChange((current) => ({
-                ...current,
-                routes: current.routes.map((item, index) =>
-                  index === routeIndex ? updater(item) : item
-                )
-              }))
-            }
-          />
-        ))}
+            {ensureViews(moduleItem.views).map((view, viewIndex) => (
+              <TrafficViewEditor
+                key={`${moduleItem.id}-view-${viewIndex}`}
+                view={view}
+                viewIndex={viewIndex}
+                onChange={(updater) =>
+                  onChange((current) => ({
+                    ...current,
+                    views: ensureViews(current.views).map((item, index) =>
+                      index === viewIndex ? updater(item) : item
+                    )
+                  }))
+                }
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                label="共用起點"
+                required
+                value={moduleItem.origin || ""}
+                onChange={(value) => onChange((current) => ({ ...current, origin: value }))}
+              />
+              <Input
+                label="共用終點"
+                required
+                value={moduleItem.destination || ""}
+                onChange={(value) =>
+                  onChange((current) => ({ ...current, destination: value }))
+                }
+              />
+            </div>
+
+            <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/80 p-4">
+              <p className="text-sm font-semibold text-slate-900">路線設定</p>
+              <p className="mt-1 text-sm text-slate-600">
+                起點與終點已在上方共用設定。下面只需要定義兩條路各自的名稱、顏色與途經點。
+              </p>
+            </div>
+
+            {ensureRoutes(moduleItem.routes).map((route, routeIndex) => (
+              <RouteEditor
+                key={`${moduleItem.id}-${routeIndex}`}
+                route={route}
+                routeIndex={routeIndex}
+                onChange={(updater) =>
+                  onChange((current) => ({
+                    ...current,
+                    routes: ensureRoutes(current.routes).map((item, index) =>
+                      index === routeIndex ? updater(item) : item
+                    )
+                  }))
+                }
+              />
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -354,7 +422,7 @@ function RouteEditor({ route, routeIndex, onChange }) {
 
 function Input({ label, value, onChange, hint, required = false, optional = false }) {
   return (
-    <label className="grid h-full grid-rows-[auto_44px_auto] gap-2">
+    <label className="grid gap-2">
       <span className="flex min-h-[28px] items-center gap-2 text-sm font-medium text-slate-700">
         {label}
         {required ? <Badge variant="brand">必填</Badge> : null}
@@ -365,14 +433,14 @@ function Input({ label, value, onChange, hint, required = false, optional = fals
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      <span className="min-h-[20px] text-xs text-slate-500">{hint || " "}</span>
+      {hint ? <span className="text-xs text-slate-500">{hint}</span> : null}
     </label>
   );
 }
 
 function ColorInput({ label, value, onChange }) {
   return (
-    <label className="grid h-full grid-rows-[auto_44px_auto] gap-2">
+    <label className="grid gap-2">
       <span className="flex min-h-[28px] items-center gap-2 text-sm font-medium text-slate-700">
         {label}
         <Badge variant="neutral">選填</Badge>
@@ -383,8 +451,90 @@ function ColorInput({ label, value, onChange }) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      <span className="min-h-[20px] text-xs text-slate-500"> </span>
     </label>
+  );
+}
+
+function TrafficViewEditor({ view, viewIndex, onChange }) {
+  const viewKey = viewIndex === 0 ? "A" : viewIndex === 1 ? "B" : `${viewIndex + 1}`;
+
+  return (
+    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-base font-semibold text-slate-950">觀測點 {viewKey}</p>
+            <Badge variant="neutral">必填：緯度、經度</Badge>
+          </div>
+          <p className="mt-2 text-sm text-slate-600">
+            請填你要觀察的交流道或路段中心點。這兩個觀測點會各自顯示成一張交通地圖。
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            label="觀測點名稱"
+            optional
+            value={view.name}
+            onChange={(value) => onChange((current) => ({ ...current, name: value }))}
+          />
+          <Input
+            label="顯示標籤"
+            optional
+            value={view.label}
+            onChange={(value) => onChange((current) => ({ ...current, label: value }))}
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_88px]">
+          <Input
+            label="觀測點顏色"
+            optional
+            hint="預設為 #336dff 與 #7c3aed"
+            value={ensureTrafficColor(view.accentColor, viewIndex)}
+            onChange={(value) =>
+              onChange((current) => ({ ...current, accentColor: value }))
+            }
+          />
+          <ColorInput
+            label="色票"
+            value={ensureTrafficColor(view.accentColor, viewIndex)}
+            onChange={(value) =>
+              onChange((current) => ({ ...current, accentColor: value }))
+            }
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            label="中心緯度"
+            required
+            hint="例如 25.0726"
+            value={String(view.center.lat)}
+            onChange={(value) =>
+              onChange((current) => ({
+                ...current,
+                center: { ...current.center, lat: toNumber(value, current.center.lat) }
+              }))
+            }
+          />
+          <Input
+            label="中心經度"
+            required
+            hint="例如 121.5209"
+            value={String(view.center.lng)}
+            onChange={(value) =>
+              onChange((current) => ({
+                ...current,
+                center: { ...current.center, lng: toNumber(value, current.center.lng) }
+              }))
+            }
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -418,6 +568,33 @@ function createDefaultRoutes() {
   ];
 }
 
+function createDefaultTrafficViews() {
+  return [
+    {
+      name: "三鶯交流道",
+      label: "主要觀測",
+      accentColor: "#336dff",
+      center: { lat: 24.9345, lng: 121.4187 },
+      zoom: 13
+    },
+    {
+      name: "樹林交流道",
+      label: "替代觀測",
+      accentColor: "#7c3aed",
+      center: { lat: 24.9894, lng: 121.4225 },
+      zoom: 13
+    }
+  ];
+}
+
+function ensureRoutes(routes) {
+  return Array.isArray(routes) && routes.length ? routes : createDefaultRoutes();
+}
+
+function ensureViews(views) {
+  return Array.isArray(views) && views.length ? views : createDefaultTrafficViews();
+}
+
 function validateSettings(settings) {
   const errors = [];
 
@@ -428,12 +605,24 @@ function validateSettings(settings) {
       errors.push(`模組 ${moduleIndex + 1}：模組名稱為必填`);
     }
 
-    if (!moduleItem.origin?.trim()) {
-      errors.push(`${moduleName}：共用起點為必填`);
-    }
+    if ((moduleItem.mode || "route") === "traffic") {
+      ensureViews(moduleItem.views).forEach((view, viewIndex) => {
+        if (!Number.isFinite(Number(view.center?.lat))) {
+          errors.push(`${moduleName} / 觀測點 ${viewIndex + 1}：中心緯度為必填`);
+        }
 
-    if (!moduleItem.destination?.trim()) {
-      errors.push(`${moduleName}：共用終點為必填`);
+        if (!Number.isFinite(Number(view.center?.lng))) {
+          errors.push(`${moduleName} / 觀測點 ${viewIndex + 1}：中心經度為必填`);
+        }
+      });
+    } else {
+      if (!moduleItem.origin?.trim()) {
+        errors.push(`${moduleName}：共用起點為必填`);
+      }
+
+      if (!moduleItem.destination?.trim()) {
+        errors.push(`${moduleName}：共用終點為必填`);
+      }
     }
   });
 
@@ -446,4 +635,17 @@ function ensureColor(value, routeIndex) {
   }
 
   return routeIndex === 0 ? "#336dff" : "#7c3aed";
+}
+
+function ensureTrafficColor(value, viewIndex) {
+  if (/^#[0-9a-fA-F]{6}$/.test(value || "")) {
+    return value;
+  }
+
+  return viewIndex === 0 ? "#336dff" : "#7c3aed";
+}
+
+function resolveInitialMode(settings) {
+  const modes = (settings?.modules || []).map((moduleItem) => moduleItem.mode || "route");
+  return modes.includes("traffic") ? "traffic" : modes[0] || "route";
 }

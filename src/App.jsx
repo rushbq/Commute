@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { AppHeader } from "./components/app-header";
+import { FeatureModeSwitcher } from "./components/feature-mode-switcher";
 import { ModuleSwitcher } from "./components/module-switcher";
 import { RouteMapCard } from "./components/route-map-card";
 import { SettingsPage } from "./components/settings-page";
+import { TrafficViewCard } from "./components/traffic-view-card";
 import { Badge } from "./components/ui/badge";
 import { Card, CardContent } from "./components/ui/card";
 import { useCommuteChecker } from "./hooks/use-commute-checker";
@@ -12,15 +14,20 @@ export default function App() {
   const {
     googleMaps,
     settings,
+    activeModule,
+    activeMode,
     modules,
+    availableModes,
     activeModuleId,
     routeResults,
+    trafficViewResults,
     error,
     isBooting,
     isRefreshing,
     lastUpdated,
     refreshRoutes,
     selectModule,
+    selectMode,
     saveSettings
   } = useCommuteChecker();
   const [page, setPage] = useState(resolvePageFromHash());
@@ -52,7 +59,7 @@ export default function App() {
               <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">快速切換通勤模組</p>
+                    <p className="text-sm font-semibold text-slate-900">功能模式與通勤模組</p>
                     <p className="mt-1 text-sm text-slate-600">
                       預設提供上班與下班，可在設定頁調整。最近更新：{formatDateTime(lastUpdated)}
                     </p>
@@ -67,17 +74,45 @@ export default function App() {
                   </div>
                 </div>
 
+                <div className="grid gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    功能模式
+                  </p>
+                  <FeatureModeSwitcher
+                    availableModes={availableModes}
+                    activeMode={activeMode}
+                    onSelect={selectMode}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    模組切換
+                  </p>
                 <ModuleSwitcher
                   modules={modules}
                   activeModuleId={activeModuleId}
                   onSelect={selectModule}
                 />
+                </div>
               </CardContent>
             </Card>
 
             <main className="grid gap-4">
               <section className="grid gap-4 lg:grid-cols-2">
-                {routeResults.length ? (
+                {activeMode === "traffic" ? (
+                  trafficViewResults.length ? (
+                    trafficViewResults.map((view) => (
+                      <TrafficViewCard key={view.id} googleMaps={googleMaps} view={view} />
+                    ))
+                  ) : (
+                    <Card className="lg:col-span-2">
+                      <CardContent className="p-6 text-sm text-slate-500">
+                        正在載入這個觀測模組的兩張交通地圖。
+                      </CardContent>
+                    </Card>
+                  )
+                ) : routeResults.length ? (
                   routeResults.map((route) => (
                     <RouteMapCard
                       key={route.id}

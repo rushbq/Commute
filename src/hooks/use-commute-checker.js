@@ -8,6 +8,7 @@ export function useCommuteChecker() {
   const [settings, setSettings] = useState(null);
   const [activeModuleId, setActiveModuleId] = useState(null);
   const [routeResults, setRouteResults] = useState([]);
+  const [trafficViewResults, setTrafficViewResults] = useState([]);
   const [status, setStatus] = useState({
     tone: "neutral",
     message: "準備載入通勤模組..."
@@ -32,14 +33,66 @@ export function useCommuteChecker() {
     );
   }, [settings, activeModuleId]);
 
+  const activeMode = activeModule?.mode || null;
+  const availableModes = useMemo(() => {
+    const modes = new Set((settings?.modules || []).map((moduleItem) => moduleItem.mode || "route"));
+    return Array.from(modes).sort((left, right) => {
+      const order = { traffic: 0, route: 1 };
+      return (order[left] ?? 99) - (order[right] ?? 99);
+    });
+  }, [settings]);
+  const visibleModules = useMemo(() => {
+    if (!activeMode) {
+      return settings?.modules || [];
+    }
+
+    return (settings?.modules || []).filter((moduleItem) => moduleItem.mode === activeMode);
+  }, [settings, activeMode]);
+
   const refreshRoutesEvent = useEffectEvent(async () => {
-    if (!activeModule || !googleMaps || !directionsServiceRef.current || refreshInFlightRef.current) {
+    if (!activeModule || !googleMaps || refreshInFlightRef.current) {
       return;
     }
 
     refreshInFlightRef.current = true;
     setIsRefreshing(true);
     setError("");
+    setRouteResults([]);
+    setTrafficViewResults([]);
+
+    if (activeModule.mode === "traffic") {
+      setStatus({
+        tone: "neutral",
+        message: `更新 ${activeModule.name} 觀測點中...`
+      });
+
+      try {
+        setTrafficViewResults(buildTrafficViews(activeModule));
+        setLastUpdated(new Date());
+        setStatus({
+          tone: "success",
+          message: `${activeModule.name} 觀測點已更新`
+        });
+      } catch (trafficError) {
+        setStatus({
+          tone: "warning",
+          message: `${activeModule.name} 觀測點更新失敗`
+        });
+        setError(trafficError.message);
+      } finally {
+        refreshInFlightRef.current = false;
+        setIsRefreshing(false);
+      }
+
+      return;
+    }
+
+    if (!directionsServiceRef.current) {
+      refreshInFlightRef.current = false;
+      setIsRefreshing(false);
+      return;
+    }
+
     setStatus({
       tone: "neutral",
       message: `更新 ${activeModule.name} 路線中...`
@@ -108,11 +161,13 @@ export function useCommuteChecker() {
           return;
         }
 
-        const nextSettings = normalizeSettingsShape(storedSettings || defaultSettings);
+        const nextSettings = normalizeSettingsShape(
+          storedSettings ? mergeSettings(defaultSettings, storedSettings) : defaultSettings
+        );
         const fallbackModuleId = nextSettings.defaultModuleId || nextSettings.modules[0]?.id || null;
-        const resolvedModuleId = nextSettings.modules.some((item) => item.id === storedModuleId)
-          ? storedModuleId
-          : fallbackModuleId;
+        const storedModule = nextSettings.modules.find((item) => item.id === storedModuleId);
+        const resolvedModuleId =
+          storedModule && storedModule.mode === "traffic" ? storedModule.id : fallbackModuleId;
 
         directionsServiceRef.current = new maps.DirectionsService();
         setSettings(nextSettings);
@@ -148,7 +203,9 @@ export function useCommuteChecker() {
 
   useEffect(() => {
     if (!activeModule || !googleMaps || !directionsServiceRef.current) {
-      return;
+      if (activeModule?.mode !== "traffic") {
+        return;
+      }
     }
 
     void refreshRoutesEvent();
@@ -156,6 +213,7 @@ export function useCommuteChecker() {
 
   async function selectModule(moduleId) {
     setRouteResults([]);
+    setTrafficViewResults([]);
     setActiveModuleId(moduleId);
     try {
       await settingsStorageRef.current.saveActiveModuleId(moduleId);
@@ -166,18 +224,43 @@ export function useCommuteChecker() {
 
   async function saveSettings(nextSettings) {
     const normalized = normalizeSettingsShape(nextSettings);
-    setSettings(normalized);
-    await settingsStorageRef.current.saveSettings(normalized);
-
     const nextActiveModuleId = normalized.modules.some((item) => item.id === activeModuleId)
       ? activeModuleId
       : normalized.defaultModuleId || normalized.modules[0]?.id || null;
+    const nextActiveModule =
+      normalized.modules.find((item) => item.id === nextActiveModuleId) || normalized.modules[0] || null;
+
+    setSettings(normalized);
+    await settingsStorageRef.current.saveSettings(normalized);
 
     setRouteResults([]);
+    setTrafficViewResults([]);
 
     if (nextActiveModuleId) {
       setActiveModuleId(nextActiveModuleId);
       await settingsStorageRef.current.saveActiveModuleId(nextActiveModuleId);
+    }
+
+    if (nextActiveModule?.mode === "traffic") {
+      setTrafficViewResults(buildTrafficViews(nextActiveModule));
+      setLastUpdated(new Date());
+      setStatus({
+        tone: "success",
+        message: `${nextActiveModule.name} 觀測點已更新`
+      });
+      return;
+    }
+  }
+
+  async function selectMode(mode) {
+    const targetModule =
+      (settings?.modules || []).find(
+        (moduleItem) => moduleItem.mode === mode && moduleItem.id === activeModuleId
+      ) ||
+      (settings?.modules || []).find((moduleItem) => moduleItem.mode === mode);
+
+    if (targetModule) {
+      await selectModule(targetModule.id);
     }
   }
 
@@ -194,9 +277,12 @@ export function useCommuteChecker() {
     googleMaps,
     settings,
     activeModule,
+    activeMode,
     activeModuleId,
-    modules: settings?.modules || [],
+    modules: visibleModules,
+    availableModes,
     routeResults,
+    trafficViewResults,
     recommendedRoute,
     comparisonDeltaMinutes,
     status,
@@ -206,6 +292,7 @@ export function useCommuteChecker() {
     lastUpdated,
     refreshRoutes: refreshRoutesEvent,
     selectModule,
+    selectMode,
     saveSettings
   };
 }
@@ -251,6 +338,7 @@ function normalizeSettingsShape(settings) {
         .filter((moduleItem) => moduleItem && moduleItem.id)
         .map((moduleItem, index) => ({
           id: moduleItem.id || `module-${index + 1}`,
+          mode: moduleItem.mode === "traffic" ? "traffic" : "route",
           name: moduleItem.name || `模組 ${index + 1}`,
           origin:
             moduleItem.origin ||
@@ -261,7 +349,8 @@ function normalizeSettingsShape(settings) {
             moduleItem.routes?.[0]?.destination ||
             "",
           mapZoom: Number(moduleItem.mapZoom) || 14,
-          routes: normalizeRoutes(moduleItem.routes)
+          routes: normalizeRoutes(moduleItem.routes),
+          views: normalizeViews(moduleItem.views)
         }))
     : [];
 
@@ -288,4 +377,51 @@ function normalizeRoutes(routes) {
       : [],
     strokeColor: route.strokeColor || (index === 0 ? "#336dff" : "#7c3aed")
   }));
+}
+
+function normalizeViews(views) {
+  return (Array.isArray(views) ? views : []).map((view, index) => ({
+    name: view.name || `觀測點 ${index + 1}`,
+    label: view.label || `交通觀測 ${index + 1}`,
+    accentColor: view.accentColor || (index === 0 ? "#336dff" : "#7c3aed"),
+    center: {
+      lat: Number(view.center?.lat) || 25.0478,
+      lng: Number(view.center?.lng) || 121.5319
+    },
+    zoom: Number(view.zoom) || 13
+  }));
+}
+
+function buildTrafficViews(moduleItem) {
+  return (moduleItem?.views || []).map((view, index) => ({
+    id: `${moduleItem.id}-view-${index + 1}`,
+    name: view.name || `觀測點 ${index + 1}`,
+    label: view.label || `交通觀測 ${index + 1}`,
+    accentColor: view.accentColor || (index === 0 ? "#336dff" : "#7c3aed"),
+    center: view.center,
+    zoom: view.zoom || moduleItem.mapZoom || 13
+  }));
+}
+
+function mergeSettings(defaultSettings, storedSettings) {
+  const defaultModules = Array.isArray(defaultSettings?.modules) ? defaultSettings.modules : [];
+  const storedModules = Array.isArray(storedSettings?.modules) ? storedSettings.modules : [];
+  const storedById = new Map(storedModules.map((moduleItem) => [moduleItem.id, moduleItem]));
+  const mergedModules = defaultModules.map((moduleItem) => storedById.get(moduleItem.id) || moduleItem);
+  const storedHasTrafficMode = storedModules.some((moduleItem) => moduleItem.mode === "traffic");
+
+  storedModules.forEach((moduleItem) => {
+    if (!defaultModules.some((defaultModule) => defaultModule.id === moduleItem.id)) {
+      mergedModules.push(moduleItem);
+    }
+  });
+
+  return {
+    ...defaultSettings,
+    ...storedSettings,
+    defaultModuleId: storedHasTrafficMode
+      ? storedSettings.defaultModuleId || defaultSettings.defaultModuleId
+      : defaultSettings.defaultModuleId,
+    modules: mergedModules
+  };
 }
