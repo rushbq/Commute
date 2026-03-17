@@ -1,76 +1,98 @@
-# Commute Traffic Checker
+# 通勤路況檢查器
 
-`Commute Traffic Checker` 是一個可直接部署到 GitHub Pages 的純靜態網站，使用 Google Maps JavaScript API 顯示即時路況，並比較兩條固定通勤路線的距離與預估行車時間。
+這個專案已重構為 `React + Vite + Tailwind CSS + shadcn/ui 風格元件` 的純前端靜態網站，適合部署到 GitHub Pages。  
+功能核心仍是：
 
-## 功能
-
-- 固定座標置中的 Google 地圖
-- Live Traffic Layer
-- 兩條預先定義路線比較
-- 每 60 秒自動刷新路況與通勤時間
-- Mobile-first 響應式版面
-- Dark mode
+- 顯示 Google Maps 即時交通圖層
+- 比較兩條固定通勤路線
+- 每 60 秒自動刷新通勤時間
 - PWA / 可安裝 web app
-- Service Worker 快取 app shell 與常用地圖相關靜態資源
+- 手機優先的繁體中文 SaaS 介面
+
+## 技術重點
+
+- `React`：元件化 UI、狀態管理、可維護性提升
+- `Vite`：靜態建置，適合 GitHub Pages
+- `Tailwind CSS`：快速建立 Stripe 風格版面
+- `shadcn/ui 風格元件`：卡片、按鈕、徽章等基礎設計系統
+- `@googlemaps/js-api-loader`：動態載入 Google Maps JavaScript API
+
+## 重要限制
+
+你提到希望「使用 React 增加安全性，避免 API key 被看見」，這裡要明確說明：
+
+- `React 無法隱藏純前端網站的 Google Maps API key`
+- 只要 API 呼叫在瀏覽器端發生，使用者就一定看得到 key 或相關請求
+- 這個版本已改成透過 `.env` 注入 `VITE_GOOGLE_MAPS_API_KEY`，避免把 key 寫死在 repo
+- 真正要隱藏 key，必須改成後端代理、serverless function，或放棄 GitHub Pages 純靜態部署
+
+因此，對目前這種 GitHub Pages 靜態站，建議做法是：
+
+1. 使用獨立的前端用 Google Maps key
+2. 在 Google Cloud Console 啟用 `HTTP referrer restrictions`
+3. 僅允許你的 GitHub Pages 網址與測試網域
 
 ## 專案結構
 
 ```text
 /project-root
   index.html
-  manifest.webmanifest
-  service-worker.js
-  /assets
-    icon-192.png
-    icon-512.png
-    icon.svg
-    maskable-icon.svg
+  package.json
+  vite.config.js
+  tailwind.config.js
+  postcss.config.js
+  .env.example
+  /public
+    manifest.webmanifest
+    service-worker.js
+    /data
+      routes.json
+    /icons
+      icon.svg
+      icon-192.png
+      icon-512.png
   /src
-    app.js
-    config.js
-    map.js
-    routeService.js
-    ui.js
-  /style
-    main.css
-  /data
-    routes.json
-  README.md
+    App.jsx
+    main.jsx
+    index.css
+    /components
+    /hooks
+    /lib
 ```
 
-## 1. 申請 Google Maps API Key
+## 安裝與執行
 
-1. 到 [Google Cloud Console](https://console.cloud.google.com/) 建立或選擇專案。
-2. 啟用 Billing。
-3. 啟用下列 API:
-   - Maps JavaScript API
-   - Directions API
-4. 建立 API key。
-
-## 2. 設定 API Key
-
-打開 [`./src/config.js`](./src/config.js)，把 `YOUR_KEY` 換成你的 API key:
-
-```js
-GOOGLE_MAPS_API_KEY: "YOUR_KEY"
+```bash
+npm install
+npm run dev
 ```
 
-## 3. 建議的 API Key 限制
+## 設定 Google Maps API key
 
-建議在 Google Cloud Console 為 API key 設定 `HTTP referrer restrictions`，例如：
+1. 到 Google Cloud Console 建立專案
+2. 啟用 Billing
+3. 啟用：
+   - `Maps JavaScript API`
+   - `Directions API`
+4. 建立 API key
+5. 複製 `.env.example` 為 `.env`
+6. 設定：
 
-- `https://<your-github-username>.github.io/*`
-- `https://<your-custom-domain>/*`
+```bash
+VITE_GOOGLE_MAPS_API_KEY=你的_Google_Maps_API_Key
+```
 
-注意：
+## `.env.example`
 
-- 如果你把 key 限制成只允許 GitHub Pages 網域，直接用 `file://` 開啟 `index.html` 時，Google Maps 可能因 referrer 不符而拒絕載入。
-- 這是 Google Maps key 安全限制本身的 trade-off，不是此專案邏輯問題。
-- 若要直接雙擊 `index.html` 測試地圖，可使用未加 referrer restriction 的測試 key，或先在本機用簡單 static server 測試。
+專案已附上 `.env.example`，內容如下：
 
-## 4. 自訂路線
+```bash
+VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
+```
 
-編輯 [`./data/routes.json`](./data/routes.json)：
+## 路線設定
+
+請編輯 [`public/data/routes.json`](./public/data/routes.json)：
 
 ```json
 {
@@ -78,73 +100,74 @@ GOOGLE_MAPS_API_KEY: "YOUR_KEY"
     "lat": 25.0478,
     "lng": 121.5319
   },
+  "mapZoom": 14,
   "routes": [
     {
-      "name": "Route A",
-      "origin": "Taipei Main Station, Taipei",
-      "destination": "National Taiwan University Hospital, Taipei",
-      "waypoints": []
+      "name": "路線 A",
+      "label": "中山南路線",
+      "origin": "台北車站",
+      "destination": "國立臺灣大學醫學院附設醫院",
+      "waypoints": [
+        {
+          "location": "中山南路, 台北市",
+          "stopover": false
+        }
+      ]
     }
   ]
 }
 ```
 
-說明：
+## 建置
 
-- `center`: 地圖中心點
-- `mapZoom`: 可選，預設為 `14`
-- `origin` / `destination`: 可用地址字串或座標
-- `waypoints`: 可用來強制路線經過特定道路
-- `strokeColor`: 可選，自訂地圖 polyline 顏色
+```bash
+npm run build
+```
 
-## 5. 直接開啟 index.html
+建置完成後，輸出在 `dist/`，可以直接部署到 GitHub Pages 或其他靜態主機。
 
-此專案沒有 build step，也不需要 backend。
+## 部署到 GitHub Pages
 
-- GitHub Pages / 一般靜態主機：會讀取 `/data/routes.json`
-- 直接雙擊開啟 `index.html`：瀏覽器通常會阻擋本機 `fetch()` 讀取 JSON，因此專案內建了同內容的 inline fallback，讓 UI 仍可運作
+### 做法一：手動部署 `dist/`
 
-如果你有修改 `routes.json`，而且又想用 `file://` 方式直接預覽，請同步更新 [`./index.html`](./index.html) 內的 `#routes-data` JSON 區塊，或改用任何簡單 static server。
+1. `npm run build`
+2. 把 `dist/` 內容部署到 GitHub Pages 對應 branch
 
-## 6. 部署到 GitHub Pages
+### 做法二：GitHub Actions
 
-1. Push 專案到 GitHub repository。
-2. 到 GitHub repository 的 `Settings > Pages`。
-3. `Source` 選 `Deploy from a branch`。
-4. Branch 選 `main` 或你使用的 branch，資料夾選 `/ (root)`。
-5. 儲存後等待 GitHub Pages 發佈完成。
-6. 確認 Google Maps API key 的 referrer 限制包含你的 GitHub Pages 網址。
+可使用標準 Vite / Pages workflow，把 `dist/` 發佈到 Pages。
 
-## 7. PWA / 安裝式 App
+## PWA 說明
 
-此專案已包含：
+專案保留：
 
 - `manifest.webmanifest`
 - `service-worker.js`
-- 安裝按鈕，瀏覽器支援且符合條件時才顯示
-- app shell 快取
-- Google Maps 相關靜態資源的 runtime caching
+- app shell caching
+- Google Maps 靜態資產 runtime caching
 
 注意：
 
-- Service Worker 只能在 `https://` 或 `localhost` 生效，不能在 `file://` 生效。
-- Google Maps 的動態資料、即時路況與 Directions 回應仍以 Google 線上服務為主，離線時不保證可正常查詢最新路況。
+- PWA 與 Service Worker 僅在 `https://` 或 `localhost` 生效
+- 地圖資料與 Directions 仍依賴 Google 線上服務，離線時不保證可用
 
-## 8. 本機檢查
+## 版面設計方向
 
-你可以直接打開 `index.html`，或用任何簡單靜態伺服器：
+這次介面是：
 
-```bash
-# Python
-python -m http.server 8080
+- 繁體中文
+- 單一亮色主題
+- Stripe 式 SaaS 卡片與漸層
+- 手機優先
+- 首屏先看到「建議走哪條路」
 
-# Node
-npx serve .
-```
+## 驗證建議
 
-## 9. 風險與限制
+完成 `.env` 後，至少檢查：
 
-- 每 60 秒呼叫一次 Directions，會消耗 Google Maps quota。
-- `duration_in_traffic` 只在 `DRIVING` 模式、且 Google 有提供即時交通估算時才有值。
-- Service Worker 對第三方地圖資產的快取效果，仍會受瀏覽器與 Google 回應標頭影響。
-- `config.js` 內放 API key 只適合純前端靜態站做法，必須搭配 key restriction 降低外洩風險。
+1. 首頁 Hero 是否為繁體中文
+2. 推薦卡是否能正確顯示建議路線
+3. 路線 A / B 是否顯示距離與時間
+4. Google Maps 是否顯示 Traffic Layer
+5. 60 秒後是否自動刷新
+6. 手機版是否先看到摘要，再看到地圖

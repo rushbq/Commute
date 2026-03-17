@@ -1,49 +1,43 @@
-const APP_SHELL_CACHE = "commute-checker-shell-v1";
-const RUNTIME_CACHE = "commute-checker-runtime-v1";
-const MAPS_CACHE = "commute-checker-maps-v1";
+const APP_SHELL_CACHE = "commute-react-shell-v1";
+const RUNTIME_CACHE = "commute-react-runtime-v1";
+const MAPS_CACHE = "commute-react-maps-v1";
 const APP_SHELL_ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./style/main.css",
-  "./src/config.js",
-  "./src/map.js",
-  "./src/routeService.js",
-  "./src/ui.js",
-  "./src/app.js",
   "./data/routes.json",
-  "./assets/icon-192.png",
-  "./assets/icon-512.png",
-  "./assets/icon.svg",
-  "./assets/maskable-icon.svg"
+  "./icons/icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
 ];
 const MAPS_HOSTS = new Set(["maps.googleapis.com", "maps.gstatic.com"]);
 const FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_ASSETS))
-  );
+  event.waitUntil(caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames.map((cacheName) => {
-          if (
-            cacheName !== APP_SHELL_CACHE &&
-            cacheName !== RUNTIME_CACHE &&
-            cacheName !== MAPS_CACHE
-          ) {
-            return caches.delete(cacheName);
-          }
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames.map((cacheName) => {
+            if (
+              cacheName !== APP_SHELL_CACHE &&
+              cacheName !== RUNTIME_CACHE &&
+              cacheName !== MAPS_CACHE
+            ) {
+              return caches.delete(cacheName);
+            }
 
-          return Promise.resolve();
-        })
+            return Promise.resolve();
+          })
+        )
       )
-    ).then(() => self.clients.claim())
+      .then(() => self.clients.claim())
   );
 });
 
@@ -79,17 +73,17 @@ async function networkFirst(request, cacheName) {
     }
     return response;
   } catch (error) {
-    const cachedResponse = await cache.match(request);
-    return cachedResponse || cache.match("./index.html");
+    const cached = await cache.match(request);
+    return cached || cache.match("./index.html");
   }
 }
 
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
-  const cachedResponse = await cache.match(request);
+  const cached = await cache.match(request);
 
-  if (cachedResponse) {
-    return cachedResponse;
+  if (cached) {
+    return cached;
   }
 
   const response = await fetch(request);
@@ -101,7 +95,7 @@ async function cacheFirst(request, cacheName) {
 
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
-  const cachedResponse = await cache.match(request);
+  const cached = await cache.match(request);
 
   const networkResponsePromise = fetch(request)
     .then((response) => {
@@ -110,7 +104,7 @@ async function staleWhileRevalidate(request, cacheName) {
       }
       return response;
     })
-    .catch(() => cachedResponse);
+    .catch(() => cached);
 
-  return cachedResponse || networkResponsePromise;
+  return cached || networkResponsePromise;
 }

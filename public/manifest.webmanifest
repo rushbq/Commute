@@ -1,0 +1,30 @@
+{
+  "name": "通勤路況檢查器",
+  "short_name": "通勤路況",
+  "description": "快速比較兩條固定通勤路線，查看 Google Maps 即時交通與推薦路線。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef4ff",
+  "theme_color": "#eef4ff",
+  "lang": "zh-TW",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

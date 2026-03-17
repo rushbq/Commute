@@ -1,0 +1,35 @@
+{
+  "center": {
+    "lat": 25.0478,
+    "lng": 121.5319
+  },
+  "mapZoom": 14,
+  "routes": [
+    {
+      "name": "路線 A",
+      "label": "中山南路線",
+      "origin": "台北車站",
+      "destination": "國立臺灣大學醫學院附設醫院",
+      "waypoints": [
+        {
+          "location": "中山南路, 台北市",
+          "stopover": false
+        }
+      ],
+      "strokeColor": "#336dff"
+    },
+    {
+      "name": "路線 B",
+      "label": "重慶南路線",
+      "origin": "台北車站",
+      "destination": "國立臺灣大學醫學院附設醫院",
+      "waypoints": [
+        {
+          "location": "重慶南路一段, 台北市",
+          "stopover": false
+        }
+      ],
+      "strokeColor": "#0f766e"
+    }
+  ]
+}
