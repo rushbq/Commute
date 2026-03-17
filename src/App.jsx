@@ -1,24 +1,20 @@
 import { useEffect, useState } from "react";
 import { AppHeader } from "./components/app-header";
 import { ModuleSwitcher } from "./components/module-switcher";
-import { RecommendationPanel } from "./components/recommendation-panel";
 import { RouteMapCard } from "./components/route-map-card";
 import { SettingsPage } from "./components/settings-page";
 import { Badge } from "./components/ui/badge";
 import { Card, CardContent } from "./components/ui/card";
 import { useCommuteChecker } from "./hooks/use-commute-checker";
+import { formatDateTime } from "./lib/formatters";
 
 export default function App() {
   const {
     googleMaps,
     settings,
     modules,
-    activeModule,
     activeModuleId,
     routeResults,
-    recommendedRoute,
-    comparisonDeltaMinutes,
-    status,
     error,
     isBooting,
     isRefreshing,
@@ -57,7 +53,9 @@ export default function App() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">快速切換通勤模組</p>
-                    <p className="mt-1 text-sm text-slate-600">預設提供上班與下班，可在設定頁調整。</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      預設提供上班與下班，可在設定頁調整。最近更新：{formatDateTime(lastUpdated)}
+                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={isBooting ? "warning" : "neutral"}>
@@ -78,15 +76,6 @@ export default function App() {
             </Card>
 
             <main className="grid gap-4">
-              <RecommendationPanel
-                activeModule={activeModule}
-                recommendedRoute={recommendedRoute}
-                comparisonDeltaMinutes={comparisonDeltaMinutes}
-                status={status}
-                error={error}
-                lastUpdated={lastUpdated}
-              />
-
               <section className="grid gap-4 lg:grid-cols-2">
                 {routeResults.length ? (
                   routeResults.map((route) => (
