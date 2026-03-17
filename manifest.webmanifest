@@ -1,7 +1,7 @@
 {
   "name": "通勤路況檢查器",
   "short_name": "通勤路況",
-  "description": "快速比較兩條固定通勤路線，查看 Google Maps 即時交通與推薦路線。",
+  "description": "快速查看自訂地點的路況。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
