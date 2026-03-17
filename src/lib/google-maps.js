@@ -3,6 +3,8 @@ import { APP_CONFIG } from "./config";
 import { formatDistance, formatDuration } from "./formatters";
 
 let mapsPromise;
+let routeClassPromise;
+let markerClassPromise;
 
 export async function loadGoogleMaps() {
   if (!APP_CONFIG.googleMapsApiKey) {
@@ -25,45 +27,59 @@ export async function loadGoogleMaps() {
   return mapsPromise;
 }
 
-export function buildDirectionsRequest(routeConfig, maps) {
-  const travelMode = maps.TravelMode[routeConfig.travelMode || "DRIVING"] || maps.TravelMode.DRIVING;
+export async function loadRouteClass() {
+  if (!routeClassPromise) {
+    routeClassPromise = google.maps.importLibrary("routes").then((lib) => lib.Route);
+  }
+  return routeClassPromise;
+}
 
+export async function loadMarkerClasses() {
+  if (!markerClassPromise) {
+    markerClassPromise = google.maps.importLibrary("marker");
+  }
+  return markerClassPromise;
+}
+
+export function buildRoutesRequest(routeConfig) {
   const request = {
     origin: normalizeLocation(routeConfig.origin),
     destination: normalizeLocation(routeConfig.destination),
-    travelMode,
-    waypoints: normalizeWaypoints(routeConfig.waypoints),
-    provideRouteAlternatives: false
+    travelMode: routeConfig.travelMode || "DRIVING",
+    routingPreference: "TRAFFIC_AWARE",
+    computeAlternativeRoutes: false,
+    fields: ["legs", "distanceMeters", "durationMillis", "staticDurationMillis", "path"],
+    departureTime: new Date(),
+    language: APP_CONFIG.googleMapsLanguage,
+    region: APP_CONFIG.googleMapsRegion
   };
 
-  if (travelMode === maps.TravelMode.DRIVING) {
-    request.drivingOptions = {
-      departureTime: new Date(),
-      trafficModel: "bestguess"
-    };
+  if (routeConfig.waypoints?.length) {
+    request.intermediates = routeConfig.waypoints
+      .filter((wp) => wp && wp.location)
+      .map((wp) => normalizeLocation(wp.location));
   }
 
   return request;
 }
 
-export function normalizeRoute(routeConfig, route, index) {
-  const firstLeg = route.legs[0];
-  const lastLeg = route.legs[route.legs.length - 1];
-  const totals = route.legs.reduce(
-    (accumulator, leg) => {
-      accumulator.distanceMeters += leg.distance?.value ?? 0;
-      accumulator.durationSeconds += leg.duration?.value ?? 0;
-      accumulator.durationInTrafficSeconds += leg.duration_in_traffic?.value ?? 0;
-      return accumulator;
-    },
-    {
-      distanceMeters: 0,
-      durationSeconds: 0,
-      durationInTrafficSeconds: 0
-    }
-  );
+export function normalizeRouteFromResponse(routeConfig, route, index) {
+  const firstLeg = route.legs?.[0];
+  const lastLeg = route.legs?.[route.legs.length - 1];
 
-  const effectiveDurationSeconds = totals.durationInTrafficSeconds || totals.durationSeconds;
+  const totalDistanceMeters = route.distanceMeters || 0;
+  const effectiveDurationMs = route.durationMillis || route.staticDurationMillis || 0;
+  const effectiveDurationSeconds = Math.round(effectiveDurationMs / 1000);
+
+  const path = route.path
+    ? route.path.map((point) => ({
+        lat: typeof point.lat === "function" ? point.lat() : point.lat,
+        lng: typeof point.lng === "function" ? point.lng() : point.lng
+      }))
+    : [];
+
+  const startLoc = firstLeg?.startLocation?.latLng || firstLeg?.startLocation;
+  const endLoc = lastLeg?.endLocation?.latLng || lastLeg?.endLocation;
 
   return {
     id: `${routeConfig.name}-${index}`,
@@ -71,52 +87,30 @@ export function normalizeRoute(routeConfig, route, index) {
     label: routeConfig.label || routeConfig.name,
     strokeColor: routeConfig.strokeColor || "#336dff",
     durationSeconds: effectiveDurationSeconds,
-    distanceMeters: totals.distanceMeters,
+    distanceMeters: totalDistanceMeters,
     durationText: formatDuration(effectiveDurationSeconds),
-    distanceText: formatDistance(totals.distanceMeters),
+    distanceText: formatDistance(totalDistanceMeters),
     durationMinutes: Math.max(1, Math.round(effectiveDurationSeconds / 60)),
-    originPosition: firstLeg?.start_location
+    originPosition: startLoc
       ? {
-          lat: firstLeg.start_location.lat(),
-          lng: firstLeg.start_location.lng()
+          lat: typeof startLoc.lat === "function" ? startLoc.lat() : (startLoc.latitude ?? startLoc.lat),
+          lng: typeof startLoc.lng === "function" ? startLoc.lng() : (startLoc.longitude ?? startLoc.lng)
         }
-      : null,
-    destinationPosition: lastLeg?.end_location
+      : path[0] || null,
+    destinationPosition: endLoc
       ? {
-          lat: lastLeg.end_location.lat(),
-          lng: lastLeg.end_location.lng()
+          lat: typeof endLoc.lat === "function" ? endLoc.lat() : (endLoc.latitude ?? endLoc.lat),
+          lng: typeof endLoc.lng === "function" ? endLoc.lng() : (endLoc.longitude ?? endLoc.lng)
         }
-      : null,
-    path: (route.overview_path || []).map((point) => ({
-      lat: point.lat(),
-      lng: point.lng()
-    }))
+      : path[path.length - 1] || null,
+    path
   };
 }
 
+
 function normalizeLocation(location) {
   if (location && typeof location === "object" && typeof location.lat === "number") {
-    return {
-      lat: location.lat,
-      lng: location.lng
-    };
+    return { lat: location.lat, lng: location.lng };
   }
-
   return location;
-}
-
-function normalizeWaypoints(waypoints = []) {
-  return waypoints.map((waypoint) => {
-    if (typeof waypoint === "string") {
-      return {
-        location: waypoint,
-        stopover: false
-      };
-    }
-
-    return {
-      location: normalizeLocation(waypoint.location),
-      stopover: waypoint.stopover === true
-    };
-  });
 }

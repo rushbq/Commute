@@ -19,21 +19,6 @@
 - `@googlemaps/js-api-loader`：動態載入 Google Maps JavaScript API
 - 設定資料採用 `storage adapter` 抽象層，目前固定使用 `localStorage`
 
-## 重要限制
-
-你提到希望「使用 React 增加安全性，避免 API key 被看見」，這裡要明確說明：
-
-- `React 無法隱藏純前端網站的 Google Maps API key`
-- 只要 API 呼叫在瀏覽器端發生，使用者就一定看得到 key 或相關請求
-- 這個版本已改成透過 `.env` 注入 `VITE_GOOGLE_MAPS_API_KEY`，避免把 key 寫死在 repo
-- 真正要隱藏 key，必須改成後端代理、serverless function，或放棄 GitHub Pages 純靜態部署
-
-因此，對目前這種 GitHub Pages 靜態站，建議做法是：
-
-1. 使用獨立的前端用 Google Maps key
-2. 在 Google Cloud Console 啟用 `HTTP referrer restrictions`
-3. 僅允許你的 GitHub Pages 網址與測試網域
-
 ## 專案結構
 
 ```text

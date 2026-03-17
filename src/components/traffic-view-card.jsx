@@ -1,18 +1,9 @@
 import { MapPinned, Navigation } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { APP_CONFIG } from "../lib/config";
+import { loadMarkerClasses } from "../lib/google-maps";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-
-const MAP_STYLES = [
-  { elementType: "geometry", stylers: [{ color: "#f8fafc" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f8fafc" }] },
-  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#cbd5e1" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#f1f5f9" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#dbeafe" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#dbeafe" }] }
-];
 
 export function TrafficViewCard({ googleMaps, view }) {
   const mapElementRef = useRef(null);
@@ -29,7 +20,7 @@ export function TrafficViewCard({ googleMaps, view }) {
     mapRef.current = new googleMaps.Map(mapElementRef.current, {
       center: view.center,
       zoom: view.zoom || 13,
-      styles: MAP_STYLES,
+      mapId: APP_CONFIG.googleMapsMapId,
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
@@ -46,22 +37,27 @@ export function TrafficViewCard({ googleMaps, view }) {
     }
 
     if (markerRef.current) {
-      markerRef.current.setMap(null);
+      markerRef.current.map = null;
       markerRef.current = null;
     }
 
-    markerRef.current = new googleMaps.Marker({
-      map: mapRef.current,
-      position: view.center,
-      title: view.name,
-      icon: {
-        path: googleMaps.SymbolPath.CIRCLE,
-        fillColor: accentColor,
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-        scale: 8
-      }
+    loadMarkerClasses().then(({ AdvancedMarkerElement }) => {
+      if (!mapRef.current) return;
+
+      const dot = document.createElement("div");
+      dot.style.width = "16px";
+      dot.style.height = "16px";
+      dot.style.borderRadius = "50%";
+      dot.style.backgroundColor = accentColor;
+      dot.style.border = "2px solid #ffffff";
+      dot.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
+
+      markerRef.current = new AdvancedMarkerElement({
+        map: mapRef.current,
+        position: view.center,
+        title: view.name,
+        content: dot
+      });
     });
 
     mapRef.current.setCenter(view.center);
@@ -72,36 +68,28 @@ export function TrafficViewCard({ googleMaps, view }) {
     <Card className="border-transparent">
       <CardContent className="space-y-4 p-4">
         <div
-          className="rounded-[24px] border bg-slate-50/70 p-4"
+          className="rounded-[24px] border bg-slate-50/70 p-4 dark:bg-slate-800/70"
           style={{ borderColor: `${accentColor}33` }}
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {view.label}
               </p>
-              <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-950">
+              <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
                 {view.name}
               </h3>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <span
-                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide text-white"
-                style={{ backgroundColor: accentColor }}
-              >
-                交通觀測
-              </span>
-              <Button variant="secondary" size="sm" asChild>
-                <a href={navigationHref} target="_blank" rel="noreferrer">
-                  <Navigation className="h-4 w-4" />
-                  導航
-                </a>
-              </Button>
-            </div>
+            <Button variant="secondary" size="sm" asChild>
+              <a href={navigationHref} target="_blank" rel="noreferrer">
+                <Navigation className="h-4 w-4" />
+                導航
+              </a>
+            </Button>
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100">
+        <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
           <div ref={mapElementRef} className="h-[400px] w-full" />
 
           <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
@@ -114,10 +102,10 @@ export function TrafficViewCard({ googleMaps, view }) {
           </div>
 
           {!googleMaps ? (
-            <div className="absolute inset-0 grid place-items-center bg-slate-100/80 p-6 text-center">
-              <div className="max-w-xs rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+            <div className="absolute inset-0 grid place-items-center bg-slate-100/80 p-6 text-center dark:bg-slate-900/80">
+              <div className="max-w-xs rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/90">
                 <MapPinned className="mx-auto h-8 w-8 text-brand-500" />
-                <p className="mt-4 text-base font-semibold text-slate-950">地圖載入中</p>
+                <p className="mt-4 text-base font-semibold text-slate-950 dark:text-slate-50">地圖載入中</p>
               </div>
             </div>
           ) : null}

@@ -31,3 +31,14 @@ export function formatDateTime(date) {
     second: "2-digit"
   }).format(date);
 }
+
+export function formatTimeCompact(date) {
+  if (!(date instanceof Date)) {
+    return "---";
+  }
+
+  return new Intl.DateTimeFormat("zh-TW", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}

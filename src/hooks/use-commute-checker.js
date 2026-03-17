@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { APP_CONFIG } from "../lib/config";
-import { buildDirectionsRequest, loadGoogleMaps, normalizeRoute } from "../lib/google-maps";
+import { buildRoutesRequest, loadGoogleMaps, loadRouteClass, normalizeRouteFromResponse } from "../lib/google-maps";
 import { createSettingsStorageAdapter } from "../lib/settings-storage";
 
 export function useCommuteChecker() {
@@ -10,16 +10,13 @@ export function useCommuteChecker() {
   const [activeModuleId, setActiveModuleId] = useState(null);
   const [routeResults, setRouteResults] = useState([]);
   const [trafficViewResults, setTrafficViewResults] = useState([]);
-  const [status, setStatus] = useState({
-    tone: "neutral",
-    message: "準備載入通勤模組..."
-  });
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isBooting, setIsBooting] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const directionsServiceRef = useRef(null);
+  const routeClassRef = useRef(null);
   const refreshInFlightRef = useRef(false);
+  const lastApiFetchTimeRef = useRef(0);
   const settingsStorageRef = useRef(createSettingsStorageAdapter());
 
   const activeModule = useMemo(() => {
@@ -58,27 +55,12 @@ export function useCommuteChecker() {
     refreshInFlightRef.current = true;
     setIsRefreshing(true);
     setError("");
-    setRouteResults([]);
-    setTrafficViewResults([]);
 
     if (activeModule.mode === "traffic") {
-      setStatus({
-        tone: "neutral",
-        message: `更新 ${activeModule.name} 觀測點中...`
-      });
-
       try {
         setTrafficViewResults(buildTrafficViews(activeModule));
         setLastUpdated(new Date());
-        setStatus({
-          tone: "success",
-          message: `${activeModule.name} 觀測點已更新`
-        });
       } catch (trafficError) {
-        setStatus({
-          tone: "warning",
-          message: `${activeModule.name} 觀測點更新失敗`
-        });
         setError(trafficError.message);
       } finally {
         refreshInFlightRef.current = false;
@@ -88,23 +70,30 @@ export function useCommuteChecker() {
       return;
     }
 
-    if (!directionsServiceRef.current) {
+    if (!routeClassRef.current) {
       refreshInFlightRef.current = false;
       setIsRefreshing(false);
       return;
     }
 
-    setStatus({
-      tone: "neutral",
-      message: `更新 ${activeModule.name} 路線中...`
-    });
+    const now = Date.now();
+    const elapsed = now - lastApiFetchTimeRef.current;
+    const cooldownMs = APP_CONFIG.refreshIntervalMs || 60_000;
+
+    if (elapsed < cooldownMs && lastApiFetchTimeRef.current > 0) {
+      const remaining = Math.ceil((cooldownMs - elapsed) / 1000);
+      setError(`API 冷卻中，${remaining} 秒後可再更新`);
+      refreshInFlightRef.current = false;
+      setIsRefreshing(false);
+      return;
+    }
 
     try {
+      const RouteClass = routeClassRef.current;
       const results = await Promise.all(
         activeModule.routes.map((routeConfig, index) =>
           requestRoute({
-            directionsService: directionsServiceRef.current,
-            maps: googleMaps,
+            RouteClass,
             routeConfig: {
               ...routeConfig,
               origin: activeModule.origin,
@@ -115,6 +104,7 @@ export function useCommuteChecker() {
         )
       );
 
+      lastApiFetchTimeRef.current = Date.now();
       const recommendedRoute = pickFastestRoute(results);
       setRouteResults(
         results.map((route) => ({
@@ -123,17 +113,7 @@ export function useCommuteChecker() {
         }))
       );
       setLastUpdated(new Date());
-      setStatus({
-        tone: "success",
-        message: recommendedRoute
-          ? `${activeModule.name} 建議走 ${recommendedRoute.name}`
-          : `${activeModule.name} 路線已更新`
-      });
     } catch (refreshError) {
-      setStatus({
-        tone: "warning",
-        message: `${activeModule.name} 路線更新失敗`
-      });
       setError(refreshError.message);
     } finally {
       refreshInFlightRef.current = false;
@@ -146,11 +126,6 @@ export function useCommuteChecker() {
 
     async function bootstrap() {
       try {
-        setStatus({
-          tone: "neutral",
-          message: "載入設定與 Google Maps 中..."
-        });
-
         const settingsStorage = settingsStorageRef.current;
         const [defaultSettings, maps, storedSettings, storedModuleId] = await Promise.all([
           loadRoutesConfig(),
@@ -158,6 +133,11 @@ export function useCommuteChecker() {
           settingsStorage.loadSettings(),
           settingsStorage.loadActiveModuleId()
         ]);
+        if (cancelled) {
+          return;
+        }
+
+        const RouteClass = await loadRouteClass();
         if (cancelled) {
           return;
         }
@@ -171,24 +151,16 @@ export function useCommuteChecker() {
         const resolvedModuleId =
           storedModule && storedModule.mode === "traffic" ? storedModule.id : fallbackModuleId;
 
-        directionsServiceRef.current = new maps.DirectionsService();
+        routeClassRef.current = RouteClass;
         setSystemDefaultSettings(normalizedDefaultSettings);
         setSettings(nextSettings);
         setActiveModuleId(resolvedModuleId);
         setGoogleMaps(maps);
-        setStatus({
-          tone: "neutral",
-          message: "已載入設定，正在取得通勤結果..."
-        });
       } catch (bootstrapError) {
         if (cancelled) {
           return;
         }
 
-        setStatus({
-          tone: "warning",
-          message: "初始化失敗，請檢查 API key 與設定"
-        });
         setError(bootstrapError.message);
       } finally {
         if (!cancelled) {
@@ -205,7 +177,7 @@ export function useCommuteChecker() {
   }, []);
 
   useEffect(() => {
-    if (!activeModule || !googleMaps || !directionsServiceRef.current) {
+    if (!activeModule || !googleMaps || !routeClassRef.current) {
       if (activeModule?.mode !== "traffic") {
         return;
       }
@@ -247,10 +219,6 @@ export function useCommuteChecker() {
     if (nextActiveModule?.mode === "traffic") {
       setTrafficViewResults(buildTrafficViews(nextActiveModule));
       setLastUpdated(new Date());
-      setStatus({
-        tone: "success",
-        message: `${nextActiveModule.name} 觀測點已更新`
-      });
       return;
     }
   }
@@ -271,10 +239,6 @@ export function useCommuteChecker() {
     setRouteResults([]);
     setTrafficViewResults([]);
     setLastUpdated(null);
-    setStatus({
-      tone: "neutral",
-      message: "已恢復系統預設設定，正在重新整理資料..."
-    });
     setSettings(normalizedDefaults);
     setActiveModuleId(nextActiveModuleId);
   }
@@ -312,7 +276,6 @@ export function useCommuteChecker() {
     trafficViewResults,
     recommendedRoute,
     comparisonDeltaMinutes,
-    status,
     error,
     isBooting,
     isRefreshing,
@@ -341,17 +304,15 @@ async function loadRoutesConfig() {
   return response.json();
 }
 
-function requestRoute({ directionsService, maps, routeConfig, index }) {
-  return new Promise((resolve, reject) => {
-    directionsService.route(buildDirectionsRequest(routeConfig, maps), (result, status) => {
-      if (status !== "OK" && status !== maps.DirectionsStatus.OK) {
-        reject(new Error(`${routeConfig.name} 路線查詢失敗：${status}`));
-        return;
-      }
+async function requestRoute({ RouteClass, routeConfig, index }) {
+  const request = buildRoutesRequest(routeConfig);
+  const { routes } = await RouteClass.computeRoutes(request);
 
-      resolve(normalizeRoute(routeConfig, result.routes[0], index));
-    });
-  });
+  if (!routes || !routes.length) {
+    throw new Error(`${routeConfig.name} 路線查詢失敗：無結果`);
+  }
+
+  return normalizeRouteFromResponse(routeConfig, routes[0], index);
 }
 
 function pickFastestRoute(routes) {

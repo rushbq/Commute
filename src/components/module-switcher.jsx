@@ -15,7 +15,7 @@ export function ModuleSwitcher({ modules, activeModuleId, onSelect }) {
               "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
               isActive
                 ? "border-brand-500 bg-brand-500 text-white shadow-glow"
-                : "border-slate-200 bg-white text-slate-600"
+                : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
             )}
           >
             {moduleItem.name}

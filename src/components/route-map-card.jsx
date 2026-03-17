@@ -1,19 +1,10 @@
 import { useEffect, useRef } from "react";
 import { MapPinned } from "lucide-react";
+import { APP_CONFIG } from "../lib/config";
+import { loadMarkerClasses } from "../lib/google-maps";
 import { RouteCard } from "./route-card";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
-
-const MAP_STYLES = [
-  { elementType: "geometry", stylers: [{ color: "#f8fafc" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f8fafc" }] },
-  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#cbd5e1" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#f1f5f9" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#dbeafe" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#dbeafe" }] }
-];
 
 export function RouteMapCard({ googleMaps, route, zoom }) {
   const mapElementRef = useRef(null);
@@ -30,7 +21,7 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
     mapRef.current = new googleMaps.Map(mapElementRef.current, {
       center: initialCenter,
       zoom: zoom || 14,
-      styles: MAP_STYLES,
+      mapId: APP_CONFIG.googleMapsMapId,
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
@@ -60,23 +51,39 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
       const originPosition = route.originPosition || route.path[0];
       const destinationPosition = route.destinationPosition || route.path[route.path.length - 1];
 
-      markersRef.current.push(
-        new googleMaps.Marker({
+      loadMarkerClasses().then(({ AdvancedMarkerElement, PinElement }) => {
+        if (!mapRef.current) return;
+
+        const originPin = new PinElement({
+          glyph: "起",
+          glyphColor: "#ffffff",
+          background: "#ef4444",
+          borderColor: "#dc2626"
+        });
+
+        const originMarker = new AdvancedMarkerElement({
           map: mapRef.current,
           position: originPosition,
-          label: "起",
-          title: "起點"
-        })
-      );
+          title: "起點",
+          content: originPin.element
+        });
+        markersRef.current.push(originMarker);
 
-      markersRef.current.push(
-        new googleMaps.Marker({
+        const destPin = new PinElement({
+          glyph: "訖",
+          glyphColor: "#ffffff",
+          background: "#3b82f6",
+          borderColor: "#2563eb"
+        });
+
+        const destMarker = new AdvancedMarkerElement({
           map: mapRef.current,
           position: destinationPosition,
-          label: "訖",
-          title: "終點"
-        })
-      );
+          title: "終點",
+          content: destPin.element
+        });
+        markersRef.current.push(destMarker);
+      });
 
       mapRef.current.setCenter(originPosition);
       mapRef.current.setZoom(zoom || 14);
@@ -89,7 +96,7 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
       polylineRef.current = null;
     }
 
-    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current.forEach((marker) => (marker.map = null));
     markersRef.current = [];
   }
 
@@ -98,7 +105,7 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
       <CardContent className="space-y-4 p-4">
         <RouteCard route={route} />
 
-        <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100">
+        <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
           <div ref={mapElementRef} className="h-[400px] w-full" />
 
           <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
@@ -106,10 +113,10 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
           </div>
 
           {!googleMaps ? (
-            <div className="absolute inset-0 grid place-items-center bg-slate-100/80 p-6 text-center">
-              <div className="max-w-xs rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+            <div className="absolute inset-0 grid place-items-center bg-slate-100/80 p-6 text-center dark:bg-slate-900/80">
+              <div className="max-w-xs rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/90">
                 <MapPinned className="mx-auto h-8 w-8 text-brand-500" />
-                <p className="mt-4 text-base font-semibold text-slate-950">地圖載入中</p>
+                <p className="mt-4 text-base font-semibold text-slate-950 dark:text-slate-50">地圖載入中</p>
               </div>
             </div>
           ) : null}
