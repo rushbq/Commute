@@ -1,4 +1,4 @@
-import { LoaderCircle, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FeatureModeSwitcher } from "./feature-mode-switcher";
 import { Button } from "./ui/button";
@@ -124,7 +124,7 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
   );
 
   return (
-    <div className="space-y-4 pb-44 sm:pb-28">
+    <div className="space-y-4 pb-24 sm:pb-28">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Settings</p>
@@ -215,31 +215,47 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
 
       <div className="sticky bottom-4 z-20">
         <Card className="border-brand-100 bg-white/95 shadow-panel backdrop-blur">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900">準備儲存設定</p>
-              <p className="mt-1 text-xs text-slate-500">畫面再長，儲存列都會固定在底部。</p>
-            </div>
-            <div className="grid w-full gap-2 sm:flex sm:w-auto sm:shrink-0">
+          <CardContent className="p-2 sm:p-4">
+            <div className="grid grid-cols-10 gap-2 sm:flex sm:justify-end">
               <Button
                 variant="secondary"
-                className="w-full sm:w-auto"
+                size="sm"
+                className="col-span-2 min-w-0 px-0 sm:w-auto sm:px-4"
                 onClick={resetToSystemDefaults}
                 disabled={isSaving || isResetting}
+                aria-label="重設為系統預設值"
+                title="重設為系統預設值"
               >
                 {isResetting ? (
                   <LoaderCircle className="h-4 w-4 animate-spin" />
                 ) : (
                   <RotateCcw className="h-4 w-4" />
                 )}
-                重設為系統預設值
+                <span className="hidden sm:inline">重設為系統預設值</span>
               </Button>
-              <Button variant="secondary" className="w-full sm:w-auto" asChild>
-                <a href={homeHref}>取消</a>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="col-span-2 min-w-0 px-0 sm:w-auto sm:px-4"
+                aria-label="取消"
+                title="取消"
+                asChild
+              >
+                <a href={homeHref}>
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">取消</span>
+                </a>
               </Button>
-              <Button className="w-full sm:w-auto" onClick={saveDraft} disabled={isSaving || isResetting}>
+              <Button
+                size="sm"
+                className="col-span-6 min-w-0 px-0 sm:w-auto sm:px-4"
+                onClick={saveDraft}
+                disabled={isSaving || isResetting}
+                aria-label="儲存設定"
+                title="儲存設定"
+              >
                 {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                儲存設定
+                <span className="hidden sm:inline">儲存設定</span>
               </Button>
             </div>
           </CardContent>
@@ -259,7 +275,7 @@ function ModuleEditor({
   title
 }) {
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+    <div className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
@@ -386,12 +402,12 @@ function RouteEditor({ route, routeIndex, onChange }) {
 
   return (
     <div
-      className="rounded-[22px] border bg-white p-4"
+      className="min-w-0 max-w-full overflow-hidden rounded-[22px] border bg-white p-4"
       style={{ borderColor: `${safeColor}33` }}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className="inline-block h-3 w-3 rounded-full"
               style={{ backgroundColor: safeColor }}
@@ -399,14 +415,14 @@ function RouteEditor({ route, routeIndex, onChange }) {
             <p className="text-base font-semibold text-slate-950">路線 {routeKey}</p>
             <Badge variant="neutral">選擇不同路徑策略</Badge>
           </div>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 break-words text-sm text-slate-600">
             例如主線走中山南路，替代線走重慶南路。若無途經點，Google 可能算出相同路線。
           </p>
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid min-w-0 gap-3">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <Input
             label="路線名稱"
             optional
@@ -421,7 +437,7 @@ function RouteEditor({ route, routeIndex, onChange }) {
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_88px]">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_88px]">
           <Input
             label="路線顏色"
             optional
@@ -459,14 +475,14 @@ function RouteEditor({ route, routeIndex, onChange }) {
 
 function Input({ label, value, onChange, hint, required = false, optional = false }) {
   return (
-    <label className="grid gap-2">
-      <span className="flex min-h-[28px] items-center gap-2 text-sm font-medium text-slate-700">
+    <label className="grid min-w-0 gap-2">
+      <span className="flex min-h-[28px] flex-wrap items-center gap-2 text-sm font-medium text-slate-700">
         {label}
         {required ? <Badge variant="brand">必填</Badge> : null}
         {!required && optional ? <Badge variant="neutral">選填</Badge> : null}
       </span>
       <input
-        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none ring-0 focus:border-brand-400"
+        className="h-11 min-w-0 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none ring-0 focus:border-brand-400"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -477,13 +493,13 @@ function Input({ label, value, onChange, hint, required = false, optional = fals
 
 function ColorInput({ label, value, onChange }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid min-w-0 gap-2">
       <span className="flex min-h-[28px] items-center gap-2 text-sm font-medium text-slate-700">
         {label}
         <Badge variant="neutral">選填</Badge>
       </span>
       <input
-        className="h-11 w-full rounded-2xl border border-slate-200 bg-white p-1"
+        className="h-11 min-w-0 w-full rounded-2xl border border-slate-200 bg-white p-1"
         type="color"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -496,21 +512,21 @@ function TrafficViewEditor({ view, viewIndex, onChange }) {
   const viewKey = viewIndex === 0 ? "A" : viewIndex === 1 ? "B" : `${viewIndex + 1}`;
 
   return (
-    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+    <div className="min-w-0 max-w-full overflow-hidden rounded-[22px] border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-semibold text-slate-950">觀測點 {viewKey}</p>
             <Badge variant="neutral">必填：緯度、經度</Badge>
           </div>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 break-words text-sm text-slate-600">
             請填你要觀察的交流道或路段中心點。這兩個觀測點會各自顯示成一張交通地圖。
           </p>
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid min-w-0 gap-3">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <Input
             label="觀測點名稱"
             optional
@@ -525,7 +541,7 @@ function TrafficViewEditor({ view, viewIndex, onChange }) {
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_88px]">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_88px]">
           <Input
             label="觀測點顏色"
             optional
@@ -544,7 +560,7 @@ function TrafficViewEditor({ view, viewIndex, onChange }) {
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <Input
             label="中心緯度"
             required
