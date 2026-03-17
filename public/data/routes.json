@@ -95,15 +95,15 @@
       "id": "traffic-southbound",
       "mode": "traffic",
       "name": "交流道觀測-上班",
-      "mapZoom": 14,
+      "mapZoom": 15,
       "views": [
         {
           "name": "三鶯交流道",
           "label": "上三鶯",
           "accentColor": "#336dff",
           "center": {
-            "lat": 24.943397,
-            "lng": 121.354527
+            "lat": 24.940134,
+            "lng": 121.361936
           }
         },
         {
@@ -111,8 +111,8 @@
           "label": "上樹林",
           "accentColor": "#7c3aed",
           "center": {
-            "lat": 24.9518052,
-            "lng": 121.3944133
+            "lat": 24.951444,
+            "lng": 121.386739
           }
         }
       ]

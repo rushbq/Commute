@@ -16,11 +16,17 @@ export function createLocalStorageSettingsAdapter() {
     async saveSettings(value) {
       window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(value));
     },
+    async clearSettings() {
+      window.localStorage.removeItem(SETTINGS_STORAGE_KEY);
+    },
     async loadActiveModuleId() {
       return window.localStorage.getItem(ACTIVE_MODULE_STORAGE_KEY);
     },
     async saveActiveModuleId(moduleId) {
       window.localStorage.setItem(ACTIVE_MODULE_STORAGE_KEY, moduleId);
+    },
+    async clearActiveModuleId() {
+      window.localStorage.removeItem(ACTIVE_MODULE_STORAGE_KEY);
     }
   };
 }

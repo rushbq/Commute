@@ -28,7 +28,8 @@ export default function App() {
     refreshRoutes,
     selectModule,
     selectMode,
-    saveSettings
+    saveSettings,
+    resetSettingsToDefaults
   } = useCommuteChecker();
   const [page, setPage] = useState(resolvePageFromHash());
 
@@ -45,7 +46,12 @@ export default function App() {
     <div className="min-h-screen">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 pb-8 pt-4 sm:px-6 lg:px-8">
         {page === "settings" ? (
-          <SettingsPage settings={settings} onSave={saveSettings} homeHref="#/" />
+          <SettingsPage
+            settings={settings}
+            onSave={saveSettings}
+            onResetToDefaults={resetSettingsToDefaults}
+            homeHref="#/"
+          />
         ) : (
           <>
             <AppHeader

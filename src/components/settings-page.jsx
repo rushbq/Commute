@@ -1,15 +1,16 @@
-import { LoaderCircle, Plus, Save, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FeatureModeSwitcher } from "./feature-mode-switcher";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 
-export function SettingsPage({ settings, onSave, homeHref }) {
+export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) {
   const [draft, setDraft] = useState(() => cloneSettings(settings));
   const [validationErrors, setValidationErrors] = useState([]);
   const [saveError, setSaveError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [selectedMode, setSelectedMode] = useState("traffic");
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export function SettingsPage({ settings, onSave, homeHref }) {
     setValidationErrors([]);
     setSaveError("");
     setIsSaving(false);
+    setIsResetting(false);
     setSelectedMode(resolveInitialMode(settings));
   }, [settings]);
 
@@ -85,6 +87,28 @@ export function SettingsPage({ settings, onSave, homeHref }) {
       setSaveError(error.message);
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function resetToSystemDefaults() {
+    const confirmed = window.confirm(
+      "這會捨棄目前尚未儲存的修改，並直接恢復為系統預設值。確定要繼續嗎？"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setValidationErrors([]);
+    setSaveError("");
+    setIsResetting(true);
+
+    try {
+      await onResetToDefaults();
+    } catch (error) {
+      setSaveError(error.message);
+    } finally {
+      setIsResetting(false);
     }
   }
 
@@ -197,10 +221,22 @@ export function SettingsPage({ settings, onSave, homeHref }) {
               <p className="mt-1 text-xs text-slate-500">畫面再長，儲存列都會固定在底部。</p>
             </div>
             <div className="flex shrink-0 gap-2">
+              <Button
+                variant="secondary"
+                onClick={resetToSystemDefaults}
+                disabled={isSaving || isResetting}
+              >
+                {isResetting ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                重設為系統預設值
+              </Button>
               <Button variant="secondary" asChild>
                 <a href={homeHref}>取消</a>
               </Button>
-              <Button onClick={saveDraft} disabled={isSaving}>
+              <Button onClick={saveDraft} disabled={isSaving || isResetting}>
                 {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 儲存設定
               </Button>
@@ -263,7 +299,7 @@ function ModuleEditor({
         <Input
           label="地圖縮放"
           optional
-          hint="每張路線地圖的預設 zoom，預設 14"
+          hint="每張地圖的預設 zoom，預設 14"
           value={String(moduleItem.mapZoom)}
           onChange={(value) =>
             onChange((current) => ({ ...current, mapZoom: toNumber(value, current.mapZoom) }))

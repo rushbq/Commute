@@ -6,6 +6,7 @@ import { createSettingsStorageAdapter } from "../lib/settings-storage";
 export function useCommuteChecker() {
   const [googleMaps, setGoogleMaps] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [systemDefaultSettings, setSystemDefaultSettings] = useState(null);
   const [activeModuleId, setActiveModuleId] = useState(null);
   const [routeResults, setRouteResults] = useState([]);
   const [trafficViewResults, setTrafficViewResults] = useState([]);
@@ -161,15 +162,17 @@ export function useCommuteChecker() {
           return;
         }
 
-        const nextSettings = normalizeSettingsShape(
-          storedSettings ? mergeSettings(defaultSettings, storedSettings) : defaultSettings
-        );
+        const normalizedDefaultSettings = normalizeSettingsShape(defaultSettings);
+        const nextSettings = storedSettings
+          ? normalizeSettingsShape(mergeSettings(normalizedDefaultSettings, storedSettings))
+          : normalizedDefaultSettings;
         const fallbackModuleId = nextSettings.defaultModuleId || nextSettings.modules[0]?.id || null;
         const storedModule = nextSettings.modules.find((item) => item.id === storedModuleId);
         const resolvedModuleId =
           storedModule && storedModule.mode === "traffic" ? storedModule.id : fallbackModuleId;
 
         directionsServiceRef.current = new maps.DirectionsService();
+        setSystemDefaultSettings(normalizedDefaultSettings);
         setSettings(nextSettings);
         setActiveModuleId(resolvedModuleId);
         setGoogleMaps(maps);
@@ -252,6 +255,30 @@ export function useCommuteChecker() {
     }
   }
 
+  async function resetSettingsToDefaults() {
+    if (!systemDefaultSettings) {
+      throw new Error("系統預設值尚未載入完成，請稍後再試。");
+    }
+
+    const normalizedDefaults = cloneSettings(systemDefaultSettings);
+    const nextActiveModuleId =
+      normalizedDefaults.defaultModuleId || normalizedDefaults.modules[0]?.id || null;
+
+    await settingsStorageRef.current.clearSettings();
+    await settingsStorageRef.current.clearActiveModuleId();
+
+    setError("");
+    setRouteResults([]);
+    setTrafficViewResults([]);
+    setLastUpdated(null);
+    setStatus({
+      tone: "neutral",
+      message: "已恢復系統預設設定，正在重新整理資料..."
+    });
+    setSettings(normalizedDefaults);
+    setActiveModuleId(nextActiveModuleId);
+  }
+
   async function selectMode(mode) {
     const targetModule =
       (settings?.modules || []).find(
@@ -293,8 +320,13 @@ export function useCommuteChecker() {
     refreshRoutes: refreshRoutesEvent,
     selectModule,
     selectMode,
-    saveSettings
+    saveSettings,
+    resetSettingsToDefaults
   };
+}
+
+function cloneSettings(settings) {
+  return JSON.parse(JSON.stringify(settings));
 }
 
 async function loadRoutesConfig() {
@@ -399,7 +431,7 @@ function buildTrafficViews(moduleItem) {
     label: view.label || `交通觀測 ${index + 1}`,
     accentColor: view.accentColor || (index === 0 ? "#336dff" : "#7c3aed"),
     center: view.center,
-    zoom: view.zoom || moduleItem.mapZoom || 13
+    zoom: moduleItem.mapZoom || view.zoom || 13
   }));
 }
 
