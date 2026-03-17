@@ -306,7 +306,16 @@ async function loadRoutesConfig() {
 
 async function requestRoute({ RouteClass, routeConfig, index }) {
   const request = buildRoutesRequest(routeConfig);
-  const { routes } = await RouteClass.computeRoutes(request);
+
+  const { routes } = await RouteClass.computeRoutes(request, {
+    fields: [
+      "routes.legs",
+      "routes.distanceMeters",
+      "routes.durationMillis",
+      "routes.staticDurationMillis",
+      "routes.path"
+    ]
+  });
 
   if (!routes || !routes.length) {
     throw new Error(`${routeConfig.name} 路線查詢失敗：無結果`);
