@@ -1,5 +1,5 @@
 {
-  "name": "通勤路況檢查器",
+  "name": "通勤小工具",
   "short_name": "通勤路況",
   "description": "快速查看自訂地點的路況。",
   "start_url": "./",
