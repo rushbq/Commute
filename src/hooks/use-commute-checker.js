@@ -1,12 +1,7 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { APP_CONFIG } from "../lib/config";
 import { buildDirectionsRequest, loadGoogleMaps, normalizeRoute } from "../lib/google-maps";
-import {
-  loadStoredActiveModuleId,
-  loadStoredSettings,
-  saveStoredActiveModuleId,
-  saveStoredSettings
-} from "../lib/storage";
+import { createSettingsStorageAdapter } from "../lib/settings-storage";
 
 export function useCommuteChecker() {
   const [googleMaps, setGoogleMaps] = useState(null);
@@ -23,6 +18,7 @@ export function useCommuteChecker() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const directionsServiceRef = useRef(null);
   const refreshInFlightRef = useRef(false);
+  const settingsStorageRef = useRef(createSettingsStorageAdapter());
 
   const activeModule = useMemo(() => {
     if (!settings?.modules?.length) {
@@ -97,14 +93,18 @@ export function useCommuteChecker() {
           message: "載入設定與 Google Maps 中..."
         });
 
-        const [defaultSettings, maps] = await Promise.all([loadRoutesConfig(), loadGoogleMaps()]);
+        const settingsStorage = settingsStorageRef.current;
+        const [defaultSettings, maps, storedSettings, storedModuleId] = await Promise.all([
+          loadRoutesConfig(),
+          loadGoogleMaps(),
+          settingsStorage.loadSettings(),
+          settingsStorage.loadActiveModuleId()
+        ]);
         if (cancelled) {
           return;
         }
 
-        const storedSettings = loadStoredSettings();
         const nextSettings = normalizeSettingsShape(storedSettings || defaultSettings);
-        const storedModuleId = loadStoredActiveModuleId();
         const fallbackModuleId = nextSettings.defaultModuleId || nextSettings.modules[0]?.id || null;
         const resolvedModuleId = nextSettings.modules.some((item) => item.id === storedModuleId)
           ? storedModuleId
@@ -147,19 +147,23 @@ export function useCommuteChecker() {
       return;
     }
 
-    refreshRoutesEvent();
+    void refreshRoutesEvent();
   }, [activeModule, googleMaps]);
 
-  function selectModule(moduleId) {
+  async function selectModule(moduleId) {
     setRouteResults([]);
     setActiveModuleId(moduleId);
-    saveStoredActiveModuleId(moduleId);
+    try {
+      await settingsStorageRef.current.saveActiveModuleId(moduleId);
+    } catch (storageError) {
+      setError(storageError.message);
+    }
   }
 
-  function saveSettings(nextSettings) {
+  async function saveSettings(nextSettings) {
     const normalized = normalizeSettingsShape(nextSettings);
     setSettings(normalized);
-    saveStoredSettings(normalized);
+    await settingsStorageRef.current.saveSettings(normalized);
 
     const nextActiveModuleId = normalized.modules.some((item) => item.id === activeModuleId)
       ? activeModuleId
@@ -169,7 +173,7 @@ export function useCommuteChecker() {
 
     if (nextActiveModuleId) {
       setActiveModuleId(nextActiveModuleId);
-      saveStoredActiveModuleId(nextActiveModuleId);
+      await settingsStorageRef.current.saveActiveModuleId(nextActiveModuleId);
     }
   }
 

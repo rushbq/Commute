@@ -45,6 +45,7 @@ export function LiveMapCard({ googleMaps, center, zoom, routes }) {
     }
 
     clearMapArtifacts();
+    const originCenter = routes.find((route) => route.originPosition)?.originPosition || center;
 
     routes.forEach((route) => {
       if (!route.path?.length) {
@@ -68,7 +69,7 @@ export function LiveMapCard({ googleMaps, center, zoom, routes }) {
       markersRef.current.push(
         new googleMaps.Marker({
           map: mapRef.current,
-          position: firstRoute.path[0],
+          position: firstRoute.originPosition || firstRoute.path[0],
           label: "起",
           title: "起點"
         })
@@ -77,14 +78,14 @@ export function LiveMapCard({ googleMaps, center, zoom, routes }) {
       markersRef.current.push(
         new googleMaps.Marker({
           map: mapRef.current,
-          position: firstRoute.path[firstRoute.path.length - 1],
+          position: firstRoute.destinationPosition || firstRoute.path[firstRoute.path.length - 1],
           label: "訖",
           title: "終點"
         })
       );
     }
 
-    mapRef.current.setCenter(center);
+    mapRef.current.setCenter(originCenter);
     mapRef.current.setZoom(zoom);
   }, [googleMaps, routes, center, zoom]);
 

@@ -47,6 +47,8 @@ export function buildDirectionsRequest(routeConfig, maps) {
 }
 
 export function normalizeRoute(routeConfig, route, index) {
+  const firstLeg = route.legs[0];
+  const lastLeg = route.legs[route.legs.length - 1];
   const totals = route.legs.reduce(
     (accumulator, leg) => {
       accumulator.distanceMeters += leg.distance?.value ?? 0;
@@ -73,6 +75,18 @@ export function normalizeRoute(routeConfig, route, index) {
     durationText: formatDuration(effectiveDurationSeconds),
     distanceText: formatDistance(totals.distanceMeters),
     durationMinutes: Math.max(1, Math.round(effectiveDurationSeconds / 60)),
+    originPosition: firstLeg?.start_location
+      ? {
+          lat: firstLeg.start_location.lat(),
+          lng: firstLeg.start_location.lng()
+        }
+      : null,
+    destinationPosition: lastLeg?.end_location
+      ? {
+          lat: lastLeg.end_location.lat(),
+          lng: lastLeg.end_location.lng()
+        }
+      : null,
     path: (route.overview_path || []).map((point) => ({
       lat: point.lat(),
       lng: point.lng()

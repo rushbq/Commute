@@ -1,13 +1,18 @@
 import { Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 
 export function SettingsPage({ settings, onSave, homeHref }) {
   const [draft, setDraft] = useState(() => cloneSettings(settings));
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     setDraft(cloneSettings(settings));
+    setValidationErrors([]);
+    setSaveError("");
   }, [settings]);
 
   if (!draft) {
@@ -15,6 +20,8 @@ export function SettingsPage({ settings, onSave, homeHref }) {
   }
 
   function updateModule(moduleId, updater) {
+    setValidationErrors([]);
+    setSaveError("");
     setDraft((current) => ({
       ...current,
       modules: current.modules.map((moduleItem) =>
@@ -53,9 +60,21 @@ export function SettingsPage({ settings, onSave, homeHref }) {
     });
   }
 
-  function saveDraft() {
-    onSave(draft);
-    window.location.hash = "#/";
+  async function saveDraft() {
+    const errors = validateSettings(draft);
+    if (errors.length) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setSaveError("");
+
+    try {
+      await onSave(draft);
+      window.location.hash = "#/";
+    } catch (error) {
+      setSaveError(error.message);
+    }
   }
 
   return (
@@ -84,7 +103,7 @@ export function SettingsPage({ settings, onSave, homeHref }) {
             <div>
               <p className="text-sm font-semibold text-slate-900">常用通勤模組</p>
               <p className="mt-1 text-sm text-slate-600">
-                預設為上班、下班。首頁可快速切換這些模組。
+                預設為上班、下班。首頁可快速切換這些模組。必填欄位只有模組名稱、起點、終點。
               </p>
             </div>
             <Button variant="secondary" size="sm" onClick={addModule}>
@@ -92,6 +111,23 @@ export function SettingsPage({ settings, onSave, homeHref }) {
               新增模組
             </Button>
           </div>
+
+          {validationErrors.length ? (
+            <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">還有欄位未完成</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                {validationErrors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {saveError ? (
+            <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-slate-700">
+              儲存失敗：{saveError}
+            </div>
+          ) : null}
 
           <div className="space-y-4">
             {draft.modules.map((moduleItem, index) => (
@@ -156,13 +192,16 @@ function ModuleEditor({
       <div className="mt-4 grid gap-3">
         <Input
           label="模組名稱"
+          required
           value={moduleItem.name}
           onChange={(value) => onChange((current) => ({ ...current, name: value }))}
         />
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Input
-            label="中心緯度"
+            label="備援中心緯度"
+            optional
+            hint="地圖尚未取得路線前的備援中心點"
             value={String(moduleItem.center.lat)}
             onChange={(value) =>
               onChange((current) => ({
@@ -172,7 +211,8 @@ function ModuleEditor({
             }
           />
           <Input
-            label="中心經度"
+            label="備援中心經度"
+            optional
             value={String(moduleItem.center.lng)}
             onChange={(value) =>
               onChange((current) => ({
@@ -183,6 +223,7 @@ function ModuleEditor({
           />
           <Input
             label="地圖縮放"
+            optional
             value={String(moduleItem.mapZoom)}
             onChange={(value) =>
               onChange((current) => ({ ...current, mapZoom: toNumber(value, current.mapZoom) }))
@@ -211,19 +252,40 @@ function ModuleEditor({
 }
 
 function RouteEditor({ route, routeIndex, onChange }) {
+  const routeKey = routeIndex === 0 ? "A" : routeIndex === 1 ? "B" : `${routeIndex + 1}`;
+
   return (
-    <div className="rounded-[20px] border border-white bg-white p-4">
-      <p className="text-sm font-semibold text-slate-900">{route.name || `路線 ${routeIndex + 1}`}</p>
+    <div
+      className="rounded-[22px] border bg-white p-4"
+      style={{ borderColor: `${route.strokeColor}33` }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block h-3 w-3 rounded-full"
+              style={{ backgroundColor: route.strokeColor }}
+            />
+            <p className="text-base font-semibold text-slate-950">路線 {routeKey}</p>
+            <Badge variant="neutral">必填：起點、終點</Badge>
+          </div>
+          <p className="mt-2 text-sm text-slate-600">
+            這一塊只設定這條路線本身。若兩條路的起終點相同，只要改路徑策略與途經點即可。
+          </p>
+        </div>
+      </div>
 
       <div className="mt-3 grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
             label="路線名稱"
+            optional
             value={route.name}
             onChange={(value) => onChange((current) => ({ ...current, name: value }))}
           />
           <Input
             label="顯示標籤"
+            optional
             value={route.label}
             onChange={(value) => onChange((current) => ({ ...current, label: value }))}
           />
@@ -231,16 +293,19 @@ function RouteEditor({ route, routeIndex, onChange }) {
 
         <Input
           label="起點"
+          required
           value={route.origin}
           onChange={(value) => onChange((current) => ({ ...current, origin: value }))}
         />
         <Input
           label="終點"
+          required
           value={route.destination}
           onChange={(value) => onChange((current) => ({ ...current, destination: value }))}
         />
         <Input
           label="途經點"
+          optional
           hint="多個途經點請用 | 分隔"
           value={route.waypoints.map((waypoint) => waypoint.location).join(" | ")}
           onChange={(value) =>
@@ -259,10 +324,14 @@ function RouteEditor({ route, routeIndex, onChange }) {
   );
 }
 
-function Input({ label, value, onChange, hint }) {
+function Input({ label, value, onChange, hint, required = false, optional = false }) {
   return (
     <label className="grid gap-2">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
+        {label}
+        {required ? <Badge variant="brand">必填</Badge> : null}
+        {!required && optional ? <Badge variant="neutral">選填</Badge> : null}
+      </span>
       <input
         className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none ring-0 focus:border-brand-400"
         value={value}
@@ -301,4 +370,30 @@ function createDefaultRoutes() {
       strokeColor: "#0f766e"
     }
   ];
+}
+
+function validateSettings(settings) {
+  const errors = [];
+
+  settings.modules.forEach((moduleItem, moduleIndex) => {
+    const moduleName = moduleItem.name?.trim() || `模組 ${moduleIndex + 1}`;
+
+    if (!moduleItem.name?.trim()) {
+      errors.push(`模組 ${moduleIndex + 1}：模組名稱為必填`);
+    }
+
+    moduleItem.routes.forEach((route, routeIndex) => {
+      const routeName = route.name?.trim() || `路線 ${routeIndex === 0 ? "A" : routeIndex === 1 ? "B" : routeIndex + 1}`;
+
+      if (!route.origin?.trim()) {
+        errors.push(`${moduleName} / ${routeName}：起點為必填`);
+      }
+
+      if (!route.destination?.trim()) {
+        errors.push(`${moduleName} / ${routeName}：終點為必填`);
+      }
+    });
+  });
+
+  return errors;
 }

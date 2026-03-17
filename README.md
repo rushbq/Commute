@@ -17,6 +17,7 @@
 - `Tailwind CSS`：快速建立 Stripe 風格版面
 - `shadcn/ui 風格元件`：卡片、按鈕、徽章等基礎設計系統
 - `@googlemaps/js-api-loader`：動態載入 Google Maps JavaScript API
+- 設定資料採用 `storage adapter` 抽象層，目前固定使用 `localStorage`
 
 ## 重要限制
 
@@ -91,27 +92,51 @@ VITE_GOOGLE_MAPS_API_KEY=你的_Google_Maps_API_Key
 VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
 ```
 
+## 設定資料儲存
+
+目前使用 `localStorage`，但讀寫已抽成 adapter：
+
+- [src/lib/settings-storage/index.js](./src/lib/settings-storage/index.js)
+- [src/lib/settings-storage/local-storage-adapter.js](./src/lib/settings-storage/local-storage-adapter.js)
+
+目前行為：
+
+- 設定資料存在瀏覽器本機
+
+未來若改 Firebase：
+
+- 只需要在 `src/lib/settings-storage/` 新增新的 adapter
+- `useCommuteChecker` 與 UI 不需要重寫
+- 建議把資料存成 `users/{uid}/commute-checker/settings`
+
 ## 路線設定
 
 請編輯 [`public/data/routes.json`](./public/data/routes.json)：
 
 ```json
 {
-  "center": {
-    "lat": 25.0478,
-    "lng": 121.5319
-  },
-  "mapZoom": 14,
-  "routes": [
+  "defaultModuleId": "commute-work",
+  "modules": [
     {
-      "name": "路線 A",
-      "label": "中山南路線",
-      "origin": "台北車站",
-      "destination": "國立臺灣大學醫學院附設醫院",
-      "waypoints": [
+      "id": "commute-work",
+      "name": "上班",
+      "center": {
+        "lat": 25.0478,
+        "lng": 121.5319
+      },
+      "mapZoom": 14,
+      "routes": [
         {
-          "location": "中山南路, 台北市",
-          "stopover": false
+          "name": "路線 A",
+          "label": "中山南路線",
+          "origin": "台北車站",
+          "destination": "國立臺灣大學醫學院附設醫院",
+          "waypoints": [
+            {
+              "location": "中山南路, 台北市",
+              "stopover": false
+            }
+          ]
         }
       ]
     }
