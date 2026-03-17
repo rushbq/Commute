@@ -5,16 +5,16 @@
       "id": "commute-work",
       "mode": "route",
       "name": "上班",
-      "origin": "台北車站",
-      "destination": "國立臺灣大學醫學院附設醫院",
+      "origin": "新北市鶯歌區國光街92號",
+      "destination": "新北市新店區民權路130巷",
       "mapZoom": 14,
       "routes": [
         {
           "name": "路線 A",
-          "label": "中山南路線",
+          "label": "三鶯線",
           "waypoints": [
             {
-              "location": "中山南路, 台北市",
+              "location": "三鶯大橋, 新北市",
               "stopover": false
             }
           ],
@@ -22,10 +22,10 @@
         },
         {
           "name": "路線 B",
-          "label": "重慶南路線",
+          "label": "樹林線",
           "waypoints": [
             {
-              "location": "重慶南路一段, 台北市",
+              "location": "三鶯二橋, 新北市",
               "stopover": false
             }
           ],
@@ -37,27 +37,27 @@
       "id": "commute-home",
       "mode": "route",
       "name": "下班",
-      "origin": "國立臺灣大學醫學院附設醫院",
-      "destination": "台北車站",
+      "origin": "新北市新店區民權路130巷",
+      "destination": "新北市鶯歌區國光街92號",
       "mapZoom": 14,
       "routes": [
         {
-          "name": "路線 A",
-          "label": "忠孝西路線",
+          "name": "樹林交流道",
+          "label": "下樹林",
           "waypoints": [
             {
-              "location": "忠孝西路一段, 台北市",
+              "location": "三鶯二橋, 新北市",
               "stopover": false
             }
           ],
           "strokeColor": "#336dff"
         },
         {
-          "name": "路線 B",
-          "label": "館前路線",
+          "name": "三鶯交流道",
+          "label": "下鶯歌",
           "waypoints": [
             {
-              "location": "館前路, 台北市",
+              "location": "三鶯大橋, 新北市",
               "stopover": false
             }
           ],
@@ -68,25 +68,25 @@
     {
       "id": "traffic-northbound",
       "mode": "traffic",
-      "name": "北上交流道觀測",
-      "mapZoom": 13,
+      "name": "交流道觀測-下班",
+      "mapZoom": 14,
       "views": [
         {
-          "name": "三鶯交流道",
-          "label": "北上主線觀測",
-          "accentColor": "#336dff",
+          "name": "樹林交流道",
+          "label": "下樹林",
+          "accentColor": "#7c3aed",
           "center": {
-            "lat": 24.9345,
-            "lng": 121.4187
+            "lat": 24.9518052,
+            "lng": 121.3944133
           }
         },
         {
-          "name": "樹林交流道",
-          "label": "替代交流道觀測",
-          "accentColor": "#7c3aed",
+          "name": "三鶯交流道",
+          "label": "下三鶯",
+          "accentColor": "#336dff",
           "center": {
-            "lat": 24.9894,
-            "lng": 121.4225
+            "lat": 24.943397,
+            "lng": 121.354527
           }
         }
       ]
@@ -94,25 +94,25 @@
     {
       "id": "traffic-southbound",
       "mode": "traffic",
-      "name": "南下交流道觀測",
-      "mapZoom": 13,
+      "name": "交流道觀測-上班",
+      "mapZoom": 15,
       "views": [
         {
-          "name": "五股交流道",
-          "label": "南下匯流觀測",
+          "name": "三鶯交流道",
+          "label": "上三鶯",
           "accentColor": "#336dff",
           "center": {
-            "lat": 25.0887,
-            "lng": 121.4384
+            "lat": 24.940134,
+            "lng": 121.361936
           }
         },
         {
-          "name": "三重交流道",
-          "label": "重點壅塞觀測",
+          "name": "樹林交流道",
+          "label": "上樹林",
           "accentColor": "#7c3aed",
           "center": {
-            "lat": 25.0721,
-            "lng": 121.4742
+            "lat": 24.951444,
+            "lng": 121.386739
           }
         }
       ]
