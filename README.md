@@ -148,6 +148,19 @@ npm run build
 
 建置完成後，輸出在 `dist/`，可以直接部署到 GitHub Pages 或其他靜態主機。
 
+## 直接部署到 GitHub Pages
+
+若 repo 已設定 Pages source 指向 `gh-pages` branch，可直接執行：
+
+```bash
+npm run deploy
+```
+
+這會自動：
+
+1. 執行 `npm run build`
+2. 把 `dist/` 發佈到 `gh-pages` branch
+
 ## 部署到 GitHub Pages
 
 ### 做法一：手動部署 `dist/`
