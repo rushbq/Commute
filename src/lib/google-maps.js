@@ -45,10 +45,10 @@ export function buildRoutesRequest(routeConfig) {
   const request = {
     origin: normalizeLocation(routeConfig.origin),
     destination: normalizeLocation(routeConfig.destination),
-    travelMode: routeConfig.travelMode || "DRIVE",
+    travelMode: "DRIVING",
     routingPreference: "TRAFFIC_AWARE",
     computeAlternativeRoutes: false,
-    departureTime: new Date(),
+    fields: ["legs", "distanceMeters", "durationMillis", "staticDurationMillis", "path"],
     language: APP_CONFIG.googleMapsLanguage,
     region: APP_CONFIG.googleMapsRegion
   };
@@ -60,6 +60,20 @@ export function buildRoutesRequest(routeConfig) {
   }
 
   return request;
+}
+
+/**
+ * Normalize a location value for Route.computeRoutes().
+ * Accepts: address string, {lat, lng} object, or pass-through.
+ */
+function normalizeLocation(location) {
+  if (typeof location === "string") {
+    return location;
+  }
+  if (location && typeof location === "object" && typeof location.lat === "number") {
+    return { lat: location.lat, lng: location.lng };
+  }
+  return location;
 }
 
 export function normalizeRouteFromResponse(routeConfig, route, index) {
@@ -105,16 +119,3 @@ export function normalizeRouteFromResponse(routeConfig, route, index) {
     path
   };
 }
-
-function normalizeLocation(location) {
-  if (location && typeof location === "object" && typeof location.lat === "number") {
-    return {
-      latLng: {
-        latitude: location.lat,
-        longitude: location.lng
-      }
-    };
-  }
-  return location;
-}
-

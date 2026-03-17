@@ -55,7 +55,7 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
         if (!mapRef.current) return;
 
         const originPin = new PinElement({
-          glyph: "起",
+          glyphText: "起",
           glyphColor: "#ffffff",
           background: "#ef4444",
           borderColor: "#dc2626"
@@ -65,12 +65,12 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
           map: mapRef.current,
           position: originPosition,
           title: "起點",
-          content: originPin.element
+          content: originPin
         });
         markersRef.current.push(originMarker);
 
         const destPin = new PinElement({
-          glyph: "訖",
+          glyphText: "訖",
           glyphColor: "#ffffff",
           background: "#3b82f6",
           borderColor: "#2563eb"
@@ -80,7 +80,7 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
           map: mapRef.current,
           position: destinationPosition,
           title: "終點",
-          content: destPin.element
+          content: destPin
         });
         markersRef.current.push(destMarker);
       });
