@@ -55,7 +55,7 @@ export default function App() {
         ) : (
           <>
             <AppHeader
-              title="通勤路況檢查器"
+              title="通勤路況小工具"
               onRefresh={refreshRoutes}
               isRefreshing={isRefreshing}
               settingsHref="#/settings"
@@ -65,9 +65,8 @@ export default function App() {
               <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">功能模式與通勤模組</p>
                     <p className="mt-1 text-sm text-slate-600">
-                      預設提供上班與下班，可在設定頁調整。最近更新：{formatDateTime(lastUpdated)}
+                      最近更新：{formatDateTime(lastUpdated)}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">

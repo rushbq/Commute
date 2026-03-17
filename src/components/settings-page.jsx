@@ -132,7 +132,7 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
             模組設定
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            先切換功能模式，再編輯該模式底下的模組。這樣 route 與 traffic 不會混在一起。
+            先切換功能模式，再編輯該模式底下的模組內容。
           </p>
         </div>
 
@@ -161,7 +161,7 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
               </p>
               <p className="mt-1 text-sm text-slate-600">
                 {selectedMode === "traffic"
-                  ? "主要使用交通觀測模式。必填欄位是觀測點的緯度與經度。"
+                  ? "緯度與經度可以在Google Map上查詢。"
                   : "必填欄位只有模組名稱、起點、終點。"}
               </p>
             </div>
@@ -519,9 +519,6 @@ function TrafficViewEditor({ view, viewIndex, onChange }) {
             <p className="text-base font-semibold text-slate-950">觀測點 {viewKey}</p>
             <Badge variant="neutral">必填：緯度、經度</Badge>
           </div>
-          <p className="mt-2 break-words text-sm text-slate-600">
-            請填你要觀察的交流道或路段中心點。這兩個觀測點會各自顯示成一張交通地圖。
-          </p>
         </div>
       </div>
 

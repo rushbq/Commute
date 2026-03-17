@@ -2,7 +2,7 @@ import { cn } from "../lib/utils";
 
 const MODE_LABELS = {
   route: "路線比較",
-  traffic: "交流道觀測"
+  traffic: "交通觀測"
 };
 
 export function FeatureModeSwitcher({ availableModes, activeMode, onSelect }) {
