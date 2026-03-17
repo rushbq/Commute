@@ -68,7 +68,7 @@
     {
       "id": "traffic-northbound",
       "mode": "traffic",
-      "name": "交流道觀測-下班",
+      "name": "下班路況",
       "mapZoom": 14,
       "views": [
         {
@@ -94,7 +94,7 @@
     {
       "id": "traffic-southbound",
       "mode": "traffic",
-      "name": "交流道觀測-上班",
+      "name": "上班路況",
       "mapZoom": 15,
       "views": [
         {
