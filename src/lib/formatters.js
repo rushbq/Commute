@@ -31,7 +31,3 @@ export function formatDateTime(date) {
     second: "2-digit"
   }).format(date);
 }
-
-export function formatCountdown(seconds) {
-  return `${Math.max(0, seconds)} 秒後更新`;
-}

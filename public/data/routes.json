@@ -1,35 +1,79 @@
 {
-  "center": {
-    "lat": 25.0478,
-    "lng": 121.5319
-  },
-  "mapZoom": 14,
-  "routes": [
+  "defaultModuleId": "commute-work",
+  "modules": [
     {
-      "name": "路線 A",
-      "label": "中山南路線",
-      "origin": "台北車站",
-      "destination": "國立臺灣大學醫學院附設醫院",
-      "waypoints": [
+      "id": "commute-work",
+      "name": "上班",
+      "center": {
+        "lat": 25.0478,
+        "lng": 121.5319
+      },
+      "mapZoom": 14,
+      "routes": [
         {
-          "location": "中山南路, 台北市",
-          "stopover": false
+          "name": "路線 A",
+          "label": "中山南路線",
+          "origin": "台北車站",
+          "destination": "國立臺灣大學醫學院附設醫院",
+          "waypoints": [
+            {
+              "location": "中山南路, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#336dff"
+        },
+        {
+          "name": "路線 B",
+          "label": "重慶南路線",
+          "origin": "台北車站",
+          "destination": "國立臺灣大學醫學院附設醫院",
+          "waypoints": [
+            {
+              "location": "重慶南路一段, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#0f766e"
         }
-      ],
-      "strokeColor": "#336dff"
+      ]
     },
     {
-      "name": "路線 B",
-      "label": "重慶南路線",
-      "origin": "台北車站",
-      "destination": "國立臺灣大學醫學院附設醫院",
-      "waypoints": [
+      "id": "commute-home",
+      "name": "下班",
+      "center": {
+        "lat": 25.0422,
+        "lng": 121.525
+      },
+      "mapZoom": 14,
+      "routes": [
         {
-          "location": "重慶南路一段, 台北市",
-          "stopover": false
+          "name": "路線 A",
+          "label": "忠孝西路線",
+          "origin": "國立臺灣大學醫學院附設醫院",
+          "destination": "台北車站",
+          "waypoints": [
+            {
+              "location": "忠孝西路一段, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#336dff"
+        },
+        {
+          "name": "路線 B",
+          "label": "館前路線",
+          "origin": "國立臺灣大學醫學院附設醫院",
+          "destination": "台北車站",
+          "waypoints": [
+            {
+              "location": "館前路, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#0f766e"
         }
-      ],
-      "strokeColor": "#0f766e"
+      ]
     }
   ]
 }

@@ -1,39 +1,26 @@
-import { ArrowUpDown, RefreshCw } from "lucide-react";
-import { Badge } from "./ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { RouteCard } from "./route-card";
 
-export function RouteComparisonPanel({ routes, isRefreshing }) {
+export function RouteComparisonPanel({ routes }) {
   return (
     <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="neutral">路線比較</Badge>
-              <Badge variant={isRefreshing ? "brand" : "neutral"}>
-                {isRefreshing ? "同步中" : "已同步"}
-              </Badge>
-            </div>
-            <CardTitle>兩條固定通勤路線</CardTitle>
-            <CardDescription>
-              用相同起點與終點做比較，差異主要來自指定經過道路與當下交通狀況。
-            </CardDescription>
-          </div>
-          <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-            <span className="inline-flex items-center gap-2">
-              {isRefreshing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowUpDown className="h-4 w-4" />}
-              持續監控
-            </span>
-          </div>
+      <CardContent className="p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">路線比較</p>
+          <h3 className="mt-2 font-display text-xl font-bold tracking-tight text-slate-950">Route A / B</h3>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
-          {routes.map((route) => (
-            <RouteCard key={route.id} route={route} />
-          ))}
-        </div>
+
+        {routes.length ? (
+          <div className="grid gap-3">
+            {routes.map((route) => (
+              <RouteCard key={route.id} route={route} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+            正在載入這個通勤模組的兩條路線結果。
+          </div>
+        )}
       </CardContent>
     </Card>
   );

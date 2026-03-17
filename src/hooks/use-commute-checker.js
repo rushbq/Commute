@@ -1,45 +1,57 @@
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { APP_CONFIG } from "../lib/config";
 import { buildDirectionsRequest, loadGoogleMaps, normalizeRoute } from "../lib/google-maps";
+import {
+  loadStoredActiveModuleId,
+  loadStoredSettings,
+  saveStoredActiveModuleId,
+  saveStoredSettings
+} from "../lib/storage";
 
 export function useCommuteChecker() {
   const [googleMaps, setGoogleMaps] = useState(null);
-  const [routesConfig, setRoutesConfig] = useState(null);
+  const [settings, setSettings] = useState(null);
+  const [activeModuleId, setActiveModuleId] = useState(null);
   const [routeResults, setRouteResults] = useState([]);
   const [status, setStatus] = useState({
     tone: "neutral",
-    message: "準備載入地圖與路線設定..."
+    message: "準備載入通勤模組..."
   });
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [countdownSeconds, setCountdownSeconds] = useState(
-    Math.ceil(APP_CONFIG.refreshIntervalMs / 1000)
-  );
   const [isBooting, setIsBooting] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const directionsServiceRef = useRef(null);
-  const nextRefreshAtRef = useRef(null);
   const refreshInFlightRef = useRef(false);
 
-  const refreshRoutesEvent = useEffectEvent(async (reason = "manual") => {
-    if (!routesConfig || !googleMaps || !directionsServiceRef.current || refreshInFlightRef.current) {
+  const activeModule = useMemo(() => {
+    if (!settings?.modules?.length) {
+      return null;
+    }
+
+    return (
+      settings.modules.find((moduleItem) => moduleItem.id === activeModuleId) ||
+      settings.modules[0] ||
+      null
+    );
+  }, [settings, activeModuleId]);
+
+  const refreshRoutesEvent = useEffectEvent(async () => {
+    if (!activeModule || !googleMaps || !directionsServiceRef.current || refreshInFlightRef.current) {
       return;
     }
 
     refreshInFlightRef.current = true;
     setIsRefreshing(true);
     setError("");
-
-    if (reason !== "initial") {
-      setStatus({
-        tone: "neutral",
-        message: "更新即時交通與通勤時間中..."
-      });
-    }
+    setStatus({
+      tone: "neutral",
+      message: `更新 ${activeModule.name} 路線中...`
+    });
 
     try {
       const results = await Promise.all(
-        routesConfig.routes.map((routeConfig, index) =>
+        activeModule.routes.map((routeConfig, index) =>
           requestRoute({
             directionsService: directionsServiceRef.current,
             maps: googleMaps,
@@ -60,15 +72,13 @@ export function useCommuteChecker() {
       setStatus({
         tone: "success",
         message: recommendedRoute
-          ? `目前建議走 ${recommendedRoute.name}`
-          : "路線資料已更新"
+          ? `${activeModule.name} 建議走 ${recommendedRoute.name}`
+          : `${activeModule.name} 路線已更新`
       });
-      nextRefreshAtRef.current = Date.now() + APP_CONFIG.refreshIntervalMs;
-      setCountdownSeconds(Math.ceil(APP_CONFIG.refreshIntervalMs / 1000));
     } catch (refreshError) {
       setStatus({
         tone: "warning",
-        message: "更新失敗，暫時保留上一筆資料"
+        message: `${activeModule.name} 路線更新失敗`
       });
       setError(refreshError.message);
     } finally {
@@ -84,21 +94,29 @@ export function useCommuteChecker() {
       try {
         setStatus({
           tone: "neutral",
-          message: "載入路線設定與 Google Maps 中..."
+          message: "載入設定與 Google Maps 中..."
         });
 
-        const [config, maps] = await Promise.all([loadRoutesConfig(), loadGoogleMaps()]);
-
+        const [defaultSettings, maps] = await Promise.all([loadRoutesConfig(), loadGoogleMaps()]);
         if (cancelled) {
           return;
         }
 
+        const storedSettings = loadStoredSettings();
+        const nextSettings = normalizeSettingsShape(storedSettings || defaultSettings);
+        const storedModuleId = loadStoredActiveModuleId();
+        const fallbackModuleId = nextSettings.defaultModuleId || nextSettings.modules[0]?.id || null;
+        const resolvedModuleId = nextSettings.modules.some((item) => item.id === storedModuleId)
+          ? storedModuleId
+          : fallbackModuleId;
+
         directionsServiceRef.current = new maps.DirectionsService();
-        setRoutesConfig(config);
+        setSettings(nextSettings);
+        setActiveModuleId(resolvedModuleId);
         setGoogleMaps(maps);
         setStatus({
           tone: "neutral",
-          message: "Google Maps 已連線，正在取得第一筆路線資料..."
+          message: "已載入設定，正在取得通勤結果..."
         });
       } catch (bootstrapError) {
         if (cancelled) {
@@ -107,7 +125,7 @@ export function useCommuteChecker() {
 
         setStatus({
           tone: "warning",
-          message: "初始化失敗，請檢查 API key 與網路設定"
+          message: "初始化失敗，請檢查 API key 與設定"
         });
         setError(bootstrapError.message);
       } finally {
@@ -125,40 +143,40 @@ export function useCommuteChecker() {
   }, []);
 
   useEffect(() => {
-    if (!routesConfig || !googleMaps || !directionsServiceRef.current) {
+    if (!activeModule || !googleMaps || !directionsServiceRef.current) {
       return;
     }
 
-    refreshRoutesEvent("initial");
+    refreshRoutesEvent();
+  }, [activeModule, googleMaps]);
 
-    const refreshTimer = window.setInterval(() => {
-      refreshRoutesEvent("auto");
-    }, APP_CONFIG.refreshIntervalMs);
+  function selectModule(moduleId) {
+    setRouteResults([]);
+    setActiveModuleId(moduleId);
+    saveStoredActiveModuleId(moduleId);
+  }
 
-    return () => {
-      window.clearInterval(refreshTimer);
-    };
-  }, [googleMaps, routesConfig]);
+  function saveSettings(nextSettings) {
+    const normalized = normalizeSettingsShape(nextSettings);
+    setSettings(normalized);
+    saveStoredSettings(normalized);
 
-  useEffect(() => {
-    const countdownTimer = window.setInterval(() => {
-      if (!nextRefreshAtRef.current) {
-        setCountdownSeconds(Math.ceil(APP_CONFIG.refreshIntervalMs / 1000));
-        return;
-      }
+    const nextActiveModuleId = normalized.modules.some((item) => item.id === activeModuleId)
+      ? activeModuleId
+      : normalized.defaultModuleId || normalized.modules[0]?.id || null;
 
-      setCountdownSeconds(
-        Math.max(0, Math.ceil((nextRefreshAtRef.current - Date.now()) / 1000))
-      );
-    }, 1000);
+    setRouteResults([]);
 
-    return () => {
-      window.clearInterval(countdownTimer);
-    };
-  }, []);
+    if (nextActiveModuleId) {
+      setActiveModuleId(nextActiveModuleId);
+      saveStoredActiveModuleId(nextActiveModuleId);
+    }
+  }
 
-  const recommendedRoute = routeResults.find((route) => route.isRecommended) || routeResults[0] || null;
-  const slowerRoute = routeResults.find((route) => route.id !== recommendedRoute?.id) || null;
+  const recommendedRoute =
+    routeResults.find((route) => route.isRecommended) || routeResults[0] || null;
+  const slowerRoute =
+    routeResults.find((route) => route.id !== recommendedRoute?.id) || null;
   const comparisonDeltaMinutes =
     recommendedRoute && slowerRoute
       ? Math.max(0, Math.round((slowerRoute.durationSeconds - recommendedRoute.durationSeconds) / 60))
@@ -166,7 +184,10 @@ export function useCommuteChecker() {
 
   return {
     googleMaps,
-    routesConfig,
+    settings,
+    activeModule,
+    activeModuleId,
+    modules: settings?.modules || [],
     routeResults,
     recommendedRoute,
     comparisonDeltaMinutes,
@@ -175,8 +196,9 @@ export function useCommuteChecker() {
     isBooting,
     isRefreshing,
     lastUpdated,
-    countdownSeconds,
-    refreshRoutes: () => refreshRoutesEvent("manual")
+    refreshRoutes: refreshRoutesEvent,
+    selectModule,
+    saveSettings
   };
 }
 
@@ -213,4 +235,47 @@ function pickFastestRoute(routes) {
 
     return current.durationSeconds < fastest.durationSeconds ? current : fastest;
   }, null);
+}
+
+function normalizeSettingsShape(settings) {
+  const modules = Array.isArray(settings?.modules)
+    ? settings.modules
+        .filter((moduleItem) => moduleItem && moduleItem.id)
+        .map((moduleItem, index) => ({
+          id: moduleItem.id || `module-${index + 1}`,
+          name: moduleItem.name || `模組 ${index + 1}`,
+          center: {
+            lat: Number(moduleItem.center?.lat) || 25.0478,
+            lng: Number(moduleItem.center?.lng) || 121.5319
+          },
+          mapZoom: Number(moduleItem.mapZoom) || 14,
+          routes: normalizeRoutes(moduleItem.routes)
+        }))
+    : [];
+
+  return {
+    defaultModuleId:
+      settings?.defaultModuleId && modules.some((item) => item.id === settings.defaultModuleId)
+        ? settings.defaultModuleId
+        : modules[0]?.id || null,
+    modules
+  };
+}
+
+function normalizeRoutes(routes) {
+  return (Array.isArray(routes) ? routes : []).map((route, index) => ({
+    name: route.name || `路線 ${String.fromCharCode(65 + index)}`,
+    label: route.label || "主要路線",
+    origin: route.origin || "",
+    destination: route.destination || "",
+    waypoints: Array.isArray(route.waypoints)
+      ? route.waypoints
+          .filter((waypoint) => waypoint && waypoint.location)
+          .map((waypoint) => ({
+            location: waypoint.location,
+            stopover: waypoint.stopover === true
+          }))
+      : [],
+    strokeColor: route.strokeColor || (index === 0 ? "#336dff" : "#0f766e")
+  }));
 }
