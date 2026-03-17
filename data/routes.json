@@ -1,0 +1,33 @@
+{
+  "center": {
+    "lat": 25.0478,
+    "lng": 121.5319
+  },
+  "mapZoom": 14,
+  "routes": [
+    {
+      "name": "Route A",
+      "origin": "Taipei Main Station, Taipei",
+      "destination": "National Taiwan University Hospital, Taipei",
+      "waypoints": [
+        {
+          "location": "Zhongshan South Road, Taipei",
+          "stopover": false
+        }
+      ],
+      "strokeColor": "#3b82f6"
+    },
+    {
+      "name": "Route B",
+      "origin": "Taipei Main Station, Taipei",
+      "destination": "National Taiwan University Hospital, Taipei",
+      "waypoints": [
+        {
+          "location": "Chongqing South Road Section 1, Taipei",
+          "stopover": false
+        }
+      ],
+      "strokeColor": "#10b981"
+    }
+  ]
+}
