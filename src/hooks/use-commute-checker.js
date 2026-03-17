@@ -51,7 +51,11 @@ export function useCommuteChecker() {
           requestRoute({
             directionsService: directionsServiceRef.current,
             maps: googleMaps,
-            routeConfig,
+            routeConfig: {
+              ...routeConfig,
+              origin: activeModule.origin,
+              destination: activeModule.destination
+            },
             index
           })
         )
@@ -248,10 +252,14 @@ function normalizeSettingsShape(settings) {
         .map((moduleItem, index) => ({
           id: moduleItem.id || `module-${index + 1}`,
           name: moduleItem.name || `模組 ${index + 1}`,
-          center: {
-            lat: Number(moduleItem.center?.lat) || 25.0478,
-            lng: Number(moduleItem.center?.lng) || 121.5319
-          },
+          origin:
+            moduleItem.origin ||
+            moduleItem.routes?.[0]?.origin ||
+            "",
+          destination:
+            moduleItem.destination ||
+            moduleItem.routes?.[0]?.destination ||
+            "",
           mapZoom: Number(moduleItem.mapZoom) || 14,
           routes: normalizeRoutes(moduleItem.routes)
         }))
@@ -270,8 +278,6 @@ function normalizeRoutes(routes) {
   return (Array.isArray(routes) ? routes : []).map((route, index) => ({
     name: route.name || `路線 ${String.fromCharCode(65 + index)}`,
     label: route.label || "主要路線",
-    origin: route.origin || "",
-    destination: route.destination || "",
     waypoints: Array.isArray(route.waypoints)
       ? route.waypoints
           .filter((waypoint) => waypoint && waypoint.location)
@@ -280,6 +286,6 @@ function normalizeRoutes(routes) {
             stopover: waypoint.stopover === true
           }))
       : [],
-    strokeColor: route.strokeColor || (index === 0 ? "#336dff" : "#0f766e")
+    strokeColor: route.strokeColor || (index === 0 ? "#336dff" : "#7c3aed")
   }));
 }

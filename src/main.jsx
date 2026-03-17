@@ -3,7 +3,11 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-registerServiceWorker();
+if (import.meta.env.PROD) {
+  registerServiceWorker();
+} else {
+  void clearDevelopmentCaches();
+}
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -28,4 +32,16 @@ function registerServiceWorker() {
       .register(`${import.meta.env.BASE_URL}service-worker.js`)
       .catch((error) => console.error("Service worker registration failed.", error));
   });
+}
+
+async function clearDevelopmentCaches() {
+  if ("serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+  }
+
+  if ("caches" in window) {
+    const cacheKeys = await window.caches.keys();
+    await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
+  }
 }

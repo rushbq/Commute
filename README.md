@@ -75,7 +75,7 @@ npm run dev
 2. 啟用 Billing
 3. 啟用：
    - `Maps JavaScript API`
-   - `Directions API`
+   - `Directions API (Legacy)`
 4. 建立 API key
 5. 複製 `.env.example` 為 `.env`
 6. 設定：
@@ -120,17 +120,13 @@ VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
     {
       "id": "commute-work",
       "name": "上班",
-      "center": {
-        "lat": 25.0478,
-        "lng": 121.5319
-      },
+      "origin": "台北車站",
+      "destination": "國立臺灣大學醫學院附設醫院",
       "mapZoom": 14,
       "routes": [
         {
           "name": "路線 A",
           "label": "中山南路線",
-          "origin": "台北車站",
-          "destination": "國立臺灣大學醫學院附設醫院",
           "waypoints": [
             {
               "location": "中山南路, 台北市",
@@ -176,6 +172,7 @@ npm run build
 
 - PWA 與 Service Worker 僅在 `https://` 或 `localhost` 生效
 - 地圖資料與 Directions 仍依賴 Google 線上服務，離線時不保證可用
+- 開發模式下會自動解除舊的 service worker 並清掉 cache，避免 CSS / JS 看到舊版本
 
 ## 版面設計方向
 
@@ -198,4 +195,5 @@ npm run build
 3. 路線 A / B 是否顯示距離與時間
 4. Google Maps 是否顯示 Traffic Layer
 5. 首頁切換 `上班 / 下班` 是否會更新結果
-6. 設定頁儲存後是否回到首頁並套用新設定
+6. 每條路線是否都有自己的獨立地圖
+7. 設定頁儲存後是否回到首頁並套用新設定

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { AppHeader } from "./components/app-header";
-import { LiveMapCard } from "./components/live-map-card";
 import { ModuleSwitcher } from "./components/module-switcher";
 import { RecommendationPanel } from "./components/recommendation-panel";
-import { RouteComparisonPanel } from "./components/route-comparison-panel";
+import { RouteMapCard } from "./components/route-map-card";
 import { SettingsPage } from "./components/settings-page";
 import { Badge } from "./components/ui/badge";
 import { Card, CardContent } from "./components/ui/card";
@@ -78,25 +77,34 @@ export default function App() {
               </CardContent>
             </Card>
 
-            <main className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-              <div className="space-y-4">
-                <RecommendationPanel
-                  activeModule={activeModule}
-                  recommendedRoute={recommendedRoute}
-                  comparisonDeltaMinutes={comparisonDeltaMinutes}
-                  status={status}
-                  error={error}
-                  lastUpdated={lastUpdated}
-                />
-                <RouteComparisonPanel routes={routeResults} />
-              </div>
-
-              <LiveMapCard
-                googleMaps={googleMaps}
-                center={activeModule?.center || { lat: 25.0478, lng: 121.5319 }}
-                zoom={activeModule?.mapZoom || 14}
-                routes={routeResults}
+            <main className="grid gap-4">
+              <RecommendationPanel
+                activeModule={activeModule}
+                recommendedRoute={recommendedRoute}
+                comparisonDeltaMinutes={comparisonDeltaMinutes}
+                status={status}
+                error={error}
+                lastUpdated={lastUpdated}
               />
+
+              <section className="grid gap-4 lg:grid-cols-2">
+                {routeResults.length ? (
+                  routeResults.map((route) => (
+                    <RouteMapCard
+                      key={route.id}
+                      googleMaps={googleMaps}
+                      route={route}
+                      zoom={activeModule?.mapZoom || 14}
+                    />
+                  ))
+                ) : (
+                  <Card className="lg:col-span-2">
+                    <CardContent className="p-6 text-sm text-slate-500">
+                      正在載入這個通勤模組的兩條路線與地圖。
+                    </CardContent>
+                  </Card>
+                )}
+              </section>
             </main>
           </>
         )}

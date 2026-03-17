@@ -1,4 +1,4 @@
-import { Plus, Save, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -8,11 +8,13 @@ export function SettingsPage({ settings, onSave, homeHref }) {
   const [draft, setDraft] = useState(() => cloneSettings(settings));
   const [validationErrors, setValidationErrors] = useState([]);
   const [saveError, setSaveError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setDraft(cloneSettings(settings));
     setValidationErrors([]);
     setSaveError("");
+    setIsSaving(false);
   }, [settings]);
 
   if (!draft) {
@@ -40,7 +42,8 @@ export function SettingsPage({ settings, onSave, homeHref }) {
         {
           id: moduleId,
           name: `常用模組 ${nextIndex}`,
-          center: { lat: 25.0478, lng: 121.5319 },
+          origin: "",
+          destination: "",
           mapZoom: 14,
           routes: createDefaultRoutes()
         }
@@ -68,33 +71,34 @@ export function SettingsPage({ settings, onSave, homeHref }) {
     }
 
     setSaveError("");
+    setIsSaving(true);
 
     try {
       await onSave(draft);
       window.location.hash = "#/";
     } catch (error) {
       setSaveError(error.message);
+    } finally {
+      setIsSaving(false);
     }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-4 pb-28">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Settings</p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-slate-950">
             路線設定
           </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            起點與終點改為模組共用，路線 A / B 只保留路徑策略、顏色與途經點。
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" asChild>
-            <a href={homeHref}>返回首頁</a>
-          </Button>
-          <Button size="sm" onClick={saveDraft}>
-            <Save className="h-4 w-4" />
-            儲存
-          </Button>
-        </div>
+
+        <Button variant="secondary" size="sm" asChild>
+          <a href={homeHref}>返回首頁</a>
+        </Button>
       </div>
 
       <Card>
@@ -103,7 +107,7 @@ export function SettingsPage({ settings, onSave, homeHref }) {
             <div>
               <p className="text-sm font-semibold text-slate-900">常用通勤模組</p>
               <p className="mt-1 text-sm text-slate-600">
-                預設為上班、下班。首頁可快速切換這些模組。必填欄位只有模組名稱、起點、終點。
+                預設為上班、下班。必填欄位只有模組名稱、起點、終點。
               </p>
             </div>
             <Button variant="secondary" size="sm" onClick={addModule}>
@@ -135,7 +139,9 @@ export function SettingsPage({ settings, onSave, homeHref }) {
                 key={moduleItem.id}
                 moduleItem={moduleItem}
                 isDefault={draft.defaultModuleId === moduleItem.id}
-                onSetDefault={() => setDraft((current) => ({ ...current, defaultModuleId: moduleItem.id }))}
+                onSetDefault={() =>
+                  setDraft((current) => ({ ...current, defaultModuleId: moduleItem.id }))
+                }
                 onChange={(updater) => updateModule(moduleItem.id, updater)}
                 onRemove={() => removeModule(moduleItem.id)}
                 allowRemove={draft.modules.length > 1}
@@ -145,6 +151,26 @@ export function SettingsPage({ settings, onSave, homeHref }) {
           </div>
         </CardContent>
       </Card>
+
+      <div className="sticky bottom-4 z-20">
+        <Card className="border-brand-100 bg-white/95 shadow-panel backdrop-blur">
+          <CardContent className="flex items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">準備儲存設定</p>
+              <p className="mt-1 text-xs text-slate-500">畫面再長，儲存列都會固定在底部。</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button variant="secondary" asChild>
+                <a href={homeHref}>取消</a>
+              </Button>
+              <Button onClick={saveDraft} disabled={isSaving}>
+                {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                儲存設定
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -197,38 +223,36 @@ function ModuleEditor({
           onChange={(value) => onChange((current) => ({ ...current, name: value }))}
         />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Input
-            label="備援中心緯度"
-            optional
-            hint="地圖尚未取得路線前的備援中心點"
-            value={String(moduleItem.center.lat)}
-            onChange={(value) =>
-              onChange((current) => ({
-                ...current,
-                center: { ...current.center, lat: toNumber(value, current.center.lat) }
-              }))
-            }
+            label="共用起點"
+            required
+            value={moduleItem.origin || ""}
+            onChange={(value) => onChange((current) => ({ ...current, origin: value }))}
           />
           <Input
-            label="備援中心經度"
-            optional
-            value={String(moduleItem.center.lng)}
-            onChange={(value) =>
-              onChange((current) => ({
-                ...current,
-                center: { ...current.center, lng: toNumber(value, current.center.lng) }
-              }))
-            }
+            label="共用終點"
+            required
+            value={moduleItem.destination || ""}
+            onChange={(value) => onChange((current) => ({ ...current, destination: value }))}
           />
-          <Input
-            label="地圖縮放"
-            optional
-            value={String(moduleItem.mapZoom)}
-            onChange={(value) =>
-              onChange((current) => ({ ...current, mapZoom: toNumber(value, current.mapZoom) }))
-            }
-          />
+        </div>
+
+        <Input
+          label="地圖縮放"
+          optional
+          hint="每張路線地圖的預設 zoom，預設 14"
+          value={String(moduleItem.mapZoom)}
+          onChange={(value) =>
+            onChange((current) => ({ ...current, mapZoom: toNumber(value, current.mapZoom) }))
+          }
+        />
+
+        <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/80 p-4">
+          <p className="text-sm font-semibold text-slate-900">路線設定</p>
+          <p className="mt-1 text-sm text-slate-600">
+            起點與終點已在上方共用設定。下面只需要定義兩條路各自的名稱、顏色與途經點。
+          </p>
         </div>
 
         {moduleItem.routes.map((route, routeIndex) => (
@@ -253,24 +277,25 @@ function ModuleEditor({
 
 function RouteEditor({ route, routeIndex, onChange }) {
   const routeKey = routeIndex === 0 ? "A" : routeIndex === 1 ? "B" : `${routeIndex + 1}`;
+  const safeColor = ensureColor(route.strokeColor, routeIndex);
 
   return (
     <div
       className="rounded-[22px] border bg-white p-4"
-      style={{ borderColor: `${route.strokeColor}33` }}
+      style={{ borderColor: `${safeColor}33` }}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <span
               className="inline-block h-3 w-3 rounded-full"
-              style={{ backgroundColor: route.strokeColor }}
+              style={{ backgroundColor: safeColor }}
             />
             <p className="text-base font-semibold text-slate-950">路線 {routeKey}</p>
-            <Badge variant="neutral">必填：起點、終點</Badge>
+            <Badge variant="neutral">選擇不同路徑策略</Badge>
           </div>
           <p className="mt-2 text-sm text-slate-600">
-            這一塊只設定這條路線本身。若兩條路的起終點相同，只要改路徑策略與途經點即可。
+            例如主線走中山南路，替代線走重慶南路。若無途經點，Google 可能算出相同路線。
           </p>
         </div>
       </div>
@@ -291,22 +316,25 @@ function RouteEditor({ route, routeIndex, onChange }) {
           />
         </div>
 
-        <Input
-          label="起點"
-          required
-          value={route.origin}
-          onChange={(value) => onChange((current) => ({ ...current, origin: value }))}
-        />
-        <Input
-          label="終點"
-          required
-          value={route.destination}
-          onChange={(value) => onChange((current) => ({ ...current, destination: value }))}
-        />
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_88px]">
+          <Input
+            label="路線顏色"
+            optional
+            hint="可直接輸入 Hex 色碼，例如 #7c3aed"
+            value={safeColor}
+            onChange={(value) => onChange((current) => ({ ...current, strokeColor: value }))}
+          />
+          <ColorInput
+            label="色票"
+            value={safeColor}
+            onChange={(value) => onChange((current) => ({ ...current, strokeColor: value }))}
+          />
+        </div>
+
         <Input
           label="途經點"
           optional
-          hint="多個途經點請用 | 分隔"
+          hint="多個途經點請用 | 分隔，例如 中山南路, 台北市 | 信義路一段, 台北市"
           value={route.waypoints.map((waypoint) => waypoint.location).join(" | ")}
           onChange={(value) =>
             onChange((current) => ({
@@ -326,8 +354,8 @@ function RouteEditor({ route, routeIndex, onChange }) {
 
 function Input({ label, value, onChange, hint, required = false, optional = false }) {
   return (
-    <label className="grid gap-2">
-      <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
+    <label className="grid h-full grid-rows-[auto_44px_auto] gap-2">
+      <span className="flex min-h-[28px] items-center gap-2 text-sm font-medium text-slate-700">
         {label}
         {required ? <Badge variant="brand">必填</Badge> : null}
         {!required && optional ? <Badge variant="neutral">選填</Badge> : null}
@@ -337,7 +365,25 @@ function Input({ label, value, onChange, hint, required = false, optional = fals
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      {hint ? <span className="text-xs text-slate-500">{hint}</span> : null}
+      <span className="min-h-[20px] text-xs text-slate-500">{hint || " "}</span>
+    </label>
+  );
+}
+
+function ColorInput({ label, value, onChange }) {
+  return (
+    <label className="grid h-full grid-rows-[auto_44px_auto] gap-2">
+      <span className="flex min-h-[28px] items-center gap-2 text-sm font-medium text-slate-700">
+        {label}
+        <Badge variant="neutral">選填</Badge>
+      </span>
+      <input
+        className="h-11 w-full rounded-2xl border border-slate-200 bg-white p-1"
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <span className="min-h-[20px] text-xs text-slate-500"> </span>
     </label>
   );
 }
@@ -347,6 +393,10 @@ function cloneSettings(settings) {
 }
 
 function toNumber(value, fallback) {
+  if (typeof value === "string" && value.trim() === "") {
+    return fallback;
+  }
+
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
@@ -356,18 +406,14 @@ function createDefaultRoutes() {
     {
       name: "路線 A",
       label: "主要路線",
-      origin: "",
-      destination: "",
       waypoints: [],
       strokeColor: "#336dff"
     },
     {
       name: "路線 B",
       label: "替代路線",
-      origin: "",
-      destination: "",
       waypoints: [],
-      strokeColor: "#0f766e"
+      strokeColor: "#7c3aed"
     }
   ];
 }
@@ -382,18 +428,22 @@ function validateSettings(settings) {
       errors.push(`模組 ${moduleIndex + 1}：模組名稱為必填`);
     }
 
-    moduleItem.routes.forEach((route, routeIndex) => {
-      const routeName = route.name?.trim() || `路線 ${routeIndex === 0 ? "A" : routeIndex === 1 ? "B" : routeIndex + 1}`;
+    if (!moduleItem.origin?.trim()) {
+      errors.push(`${moduleName}：共用起點為必填`);
+    }
 
-      if (!route.origin?.trim()) {
-        errors.push(`${moduleName} / ${routeName}：起點為必填`);
-      }
-
-      if (!route.destination?.trim()) {
-        errors.push(`${moduleName} / ${routeName}：終點為必填`);
-      }
-    });
+    if (!moduleItem.destination?.trim()) {
+      errors.push(`${moduleName}：共用終點為必填`);
+    }
   });
 
   return errors;
+}
+
+function ensureColor(value, routeIndex) {
+  if (/^#[0-9a-fA-F]{6}$/.test(value || "")) {
+    return value;
+  }
+
+  return routeIndex === 0 ? "#336dff" : "#7c3aed";
 }

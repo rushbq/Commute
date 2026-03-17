@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { MapPinned } from "lucide-react";
+import { RouteCard } from "./route-card";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 
@@ -14,10 +15,10 @@ const MAP_STYLES = [
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#dbeafe" }] }
 ];
 
-export function LiveMapCard({ googleMaps, center, zoom, routes }) {
+export function RouteMapCard({ googleMaps, route, zoom }) {
   const mapElementRef = useRef(null);
   const mapRef = useRef(null);
-  const polylinesRef = useRef([]);
+  const polylineRef = useRef(null);
   const markersRef = useRef([]);
 
   useEffect(() => {
@@ -25,9 +26,10 @@ export function LiveMapCard({ googleMaps, center, zoom, routes }) {
       return;
     }
 
+    const initialCenter = route?.originPosition || route?.path?.[0] || { lat: 25.0478, lng: 121.5319 };
     mapRef.current = new googleMaps.Map(mapElementRef.current, {
-      center,
-      zoom,
+      center: initialCenter,
+      zoom: zoom || 14,
       styles: MAP_STYLES,
       disableDefaultUI: true,
       zoomControl: true,
@@ -37,39 +39,31 @@ export function LiveMapCard({ googleMaps, center, zoom, routes }) {
 
     const trafficLayer = new googleMaps.TrafficLayer();
     trafficLayer.setMap(mapRef.current);
-  }, [googleMaps, center, zoom]);
+  }, [googleMaps, route, zoom]);
 
   useEffect(() => {
-    if (!googleMaps || !mapRef.current) {
+    if (!googleMaps || !mapRef.current || !route) {
       return;
     }
 
-    clearMapArtifacts();
-    const originCenter = routes.find((route) => route.originPosition)?.originPosition || center;
+    clearArtifacts();
 
-    routes.forEach((route) => {
-      if (!route.path?.length) {
-        return;
-      }
-
-      const polyline = new googleMaps.Polyline({
+    if (route.path?.length) {
+      polylineRef.current = new googleMaps.Polyline({
         map: mapRef.current,
         path: route.path,
         strokeColor: route.strokeColor,
-        strokeOpacity: route.isRecommended ? 0.98 : 0.72,
-        strokeWeight: route.isRecommended ? 7 : 5,
-        zIndex: route.isRecommended ? 10 : 5
+        strokeOpacity: route.isRecommended ? 0.98 : 0.82,
+        strokeWeight: route.isRecommended ? 7 : 5
       });
 
-      polylinesRef.current.push(polyline);
-    });
+      const originPosition = route.originPosition || route.path[0];
+      const destinationPosition = route.destinationPosition || route.path[route.path.length - 1];
 
-    const firstRoute = routes.find((route) => route.path?.length);
-    if (firstRoute) {
       markersRef.current.push(
         new googleMaps.Marker({
           map: mapRef.current,
-          position: firstRoute.originPosition || firstRoute.path[0],
+          position: originPosition,
           label: "起",
           title: "起點"
         })
@@ -78,33 +72,38 @@ export function LiveMapCard({ googleMaps, center, zoom, routes }) {
       markersRef.current.push(
         new googleMaps.Marker({
           map: mapRef.current,
-          position: firstRoute.destinationPosition || firstRoute.path[firstRoute.path.length - 1],
+          position: destinationPosition,
           label: "訖",
           title: "終點"
         })
       );
+
+      mapRef.current.setCenter(originPosition);
+      mapRef.current.setZoom(zoom || 14);
+    }
+  }, [googleMaps, route, zoom]);
+
+  function clearArtifacts() {
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
     }
 
-    mapRef.current.setCenter(originCenter);
-    mapRef.current.setZoom(zoom);
-  }, [googleMaps, routes, center, zoom]);
-
-  function clearMapArtifacts() {
-    polylinesRef.current.forEach((polyline) => polyline.setMap(null));
-    polylinesRef.current = [];
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
   }
 
   return (
     <Card>
-      <CardContent className="p-0">
-        <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-slate-100">
-          <div ref={mapElementRef} className="h-[50svh] min-h-[360px] w-full lg:h-[640px]" />
+      <CardContent className="space-y-4 p-4">
+        <RouteCard route={route} />
+
+        <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100">
+          <div ref={mapElementRef} className="h-[240px] w-full sm:h-[260px]" />
 
           <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
-            <Badge variant="brand">即時交通</Badge>
-            <Badge variant="neutral">雙路線</Badge>
+            <Badge variant="brand">{route.name}</Badge>
+            <Badge variant="neutral">獨立地圖</Badge>
           </div>
 
           {!googleMaps ? (
