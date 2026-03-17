@@ -1,6 +1,7 @@
-import { MapPinned } from "lucide-react";
+import { MapPinned, Navigation } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
 
 const MAP_STYLES = [
   { elementType: "geometry", stylers: [{ color: "#f8fafc" }] },
@@ -18,6 +19,7 @@ export function TrafficViewCard({ googleMaps, view }) {
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const accentColor = view.accentColor || "#336dff";
+  const navigationHref = buildGoogleMapsNavigationHref(view);
 
   useEffect(() => {
     if (!googleMaps || !mapElementRef.current || mapRef.current) {
@@ -82,16 +84,20 @@ export function TrafficViewCard({ googleMaps, view }) {
                 {view.name}
               </h3>
             </div>
-            <span
-              className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide text-white"
-              style={{ backgroundColor: accentColor }}
-            >
-              交通觀測
-            </span>
-          </div>
-
-          <div className="mt-4 rounded-[20px] border border-white/80 bg-white/80 p-3 text-sm text-slate-600">
-            中心點：{view.center.lat.toFixed(4)}, {view.center.lng.toFixed(4)}
+            <div className="flex flex-col items-end gap-2">
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                交通觀測
+              </span>
+              <Button variant="secondary" size="sm" asChild>
+                <a href={navigationHref} target="_blank" rel="noreferrer">
+                  <Navigation className="h-4 w-4" />
+                  導航
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -119,4 +125,12 @@ export function TrafficViewCard({ googleMaps, view }) {
       </CardContent>
     </Card>
   );
+}
+
+function buildGoogleMapsNavigationHref(view) {
+  const lat = Number(view?.center?.lat);
+  const lng = Number(view?.center?.lng);
+  const destination = `${lat},${lng}`;
+
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=driving&dir_action=navigate`;
 }
