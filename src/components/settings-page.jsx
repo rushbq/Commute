@@ -124,9 +124,9 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
   );
 
   return (
-    <div className="space-y-4 pb-28">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+    <div className="space-y-4 pb-44 sm:pb-28">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Settings</p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-slate-950">
             模組設定
@@ -136,7 +136,7 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
           </p>
         </div>
 
-        <Button variant="secondary" size="sm" asChild>
+        <Button variant="secondary" size="sm" className="w-full sm:w-auto" asChild>
           <a href={homeHref}>返回首頁</a>
         </Button>
       </div>
@@ -154,8 +154,8 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900">
                 {selectedMode === "traffic" ? "交流道觀測模組" : "路線比較模組"}
               </p>
@@ -165,7 +165,7 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
                   : "必填欄位只有模組名稱、起點、終點。"}
               </p>
             </div>
-            <Button variant="secondary" size="sm" onClick={addModule}>
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={addModule}>
               <Plus className="h-4 w-4" />
               新增模組
             </Button>
@@ -215,14 +215,15 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
 
       <div className="sticky bottom-4 z-20">
         <Card className="border-brand-100 bg-white/95 shadow-panel backdrop-blur">
-          <CardContent className="flex items-center justify-between gap-3 p-4">
-            <div>
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900">準備儲存設定</p>
               <p className="mt-1 text-xs text-slate-500">畫面再長，儲存列都會固定在底部。</p>
             </div>
-            <div className="flex shrink-0 gap-2">
+            <div className="grid w-full gap-2 sm:flex sm:w-auto sm:shrink-0">
               <Button
                 variant="secondary"
+                className="w-full sm:w-auto"
                 onClick={resetToSystemDefaults}
                 disabled={isSaving || isResetting}
               >
@@ -233,10 +234,10 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
                 )}
                 重設為系統預設值
               </Button>
-              <Button variant="secondary" asChild>
+              <Button variant="secondary" className="w-full sm:w-auto" asChild>
                 <a href={homeHref}>取消</a>
               </Button>
-              <Button onClick={saveDraft} disabled={isSaving || isResetting}>
+              <Button className="w-full sm:w-auto" onClick={saveDraft} disabled={isSaving || isResetting}>
                 {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 儲存設定
               </Button>
@@ -259,12 +260,12 @@ function ModuleEditor({
 }) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
-          <p className="mt-1 text-lg font-semibold text-slate-950">{moduleItem.name}</p>
+          <p className="mt-1 break-words text-lg font-semibold text-slate-950">{moduleItem.name}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <button
             type="button"
             onClick={onSetDefault}
