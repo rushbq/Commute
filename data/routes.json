@@ -1,0 +1,121 @@
+{
+  "defaultModuleId": "traffic-northbound",
+  "modules": [
+    {
+      "id": "commute-work",
+      "mode": "route",
+      "name": "上班",
+      "origin": "台北車站",
+      "destination": "國立臺灣大學醫學院附設醫院",
+      "mapZoom": 14,
+      "routes": [
+        {
+          "name": "路線 A",
+          "label": "中山南路線",
+          "waypoints": [
+            {
+              "location": "中山南路, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#336dff"
+        },
+        {
+          "name": "路線 B",
+          "label": "重慶南路線",
+          "waypoints": [
+            {
+              "location": "重慶南路一段, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#7c3aed"
+        }
+      ]
+    },
+    {
+      "id": "commute-home",
+      "mode": "route",
+      "name": "下班",
+      "origin": "國立臺灣大學醫學院附設醫院",
+      "destination": "台北車站",
+      "mapZoom": 14,
+      "routes": [
+        {
+          "name": "路線 A",
+          "label": "忠孝西路線",
+          "waypoints": [
+            {
+              "location": "忠孝西路一段, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#336dff"
+        },
+        {
+          "name": "路線 B",
+          "label": "館前路線",
+          "waypoints": [
+            {
+              "location": "館前路, 台北市",
+              "stopover": false
+            }
+          ],
+          "strokeColor": "#7c3aed"
+        }
+      ]
+    },
+    {
+      "id": "traffic-northbound",
+      "mode": "traffic",
+      "name": "北上交流道觀測",
+      "mapZoom": 13,
+      "views": [
+        {
+          "name": "三鶯交流道",
+          "label": "北上主線觀測",
+          "accentColor": "#336dff",
+          "center": {
+            "lat": 24.9345,
+            "lng": 121.4187
+          }
+        },
+        {
+          "name": "樹林交流道",
+          "label": "替代交流道觀測",
+          "accentColor": "#7c3aed",
+          "center": {
+            "lat": 24.9894,
+            "lng": 121.4225
+          }
+        }
+      ]
+    },
+    {
+      "id": "traffic-southbound",
+      "mode": "traffic",
+      "name": "南下交流道觀測",
+      "mapZoom": 13,
+      "views": [
+        {
+          "name": "五股交流道",
+          "label": "南下匯流觀測",
+          "accentColor": "#336dff",
+          "center": {
+            "lat": 25.0887,
+            "lng": 121.4384
+          }
+        },
+        {
+          "name": "三重交流道",
+          "label": "重點壅塞觀測",
+          "accentColor": "#7c3aed",
+          "center": {
+            "lat": 25.0721,
+            "lng": 121.4742
+          }
+        }
+      ]
+    }
+  ]
+}
