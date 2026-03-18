@@ -1,6 +1,10 @@
-const APP_SHELL_CACHE = "commute-react-shell-v1";
-const RUNTIME_CACHE = "commute-react-runtime-v1";
-const MAPS_CACHE = "commute-react-maps-v1";
+// mmvku8ah 在 build 時由 Vite 插件替換為 build timestamp（如 "lzqk0g8"）
+// 每次 deploy 都會產生新版本，讓 activate 自動清除舊快取
+const CACHE_VERSION = "mmvku8ah";
+const APP_SHELL_CACHE = `commute-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `commute-runtime-${CACHE_VERSION}`;
+const MAPS_CACHE = `commute-maps-${CACHE_VERSION}`;
+
 const APP_SHELL_ASSETS = [
   "./",
   "./index.html",
@@ -13,11 +17,13 @@ const APP_SHELL_ASSETS = [
 const MAPS_HOSTS = new Set(["maps.googleapis.com", "maps.gstatic.com"]);
 const FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
 
+// 安裝：預先快取 App Shell，但不呼叫 skipWaiting。
+// 等待 App 通知才切換，讓使用者可以選擇何時更新。
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_ASSETS)));
-  self.skipWaiting();
 });
 
+// 啟動：清除所有舊版快取（名稱不符合目前版本者）
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -25,20 +31,29 @@ self.addEventListener("activate", (event) => {
       .then((cacheNames) =>
         Promise.all(
           cacheNames.map((cacheName) => {
-            if (
-              cacheName !== APP_SHELL_CACHE &&
-              cacheName !== RUNTIME_CACHE &&
-              cacheName !== MAPS_CACHE
-            ) {
-              return caches.delete(cacheName);
-            }
-
-            return Promise.resolve();
+            const isCurrentCache =
+              cacheName === APP_SHELL_CACHE ||
+              cacheName === RUNTIME_CACHE ||
+              cacheName === MAPS_CACHE;
+            return isCurrentCache ? null : caches.delete(cacheName);
           })
         )
       )
       .then(() => self.clients.claim())
+      .then(() => {
+        // 通知所有 tab：新版本已就緒
+        return self.clients.matchAll({ type: "window" }).then((clients) => {
+          clients.forEach((client) => client.postMessage({ type: "SW_ACTIVATED" }));
+        });
+      })
   );
+});
+
+// 接收 App 的指令：SKIP_WAITING 讓新 SW 立即接管
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {
