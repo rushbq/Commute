@@ -11,7 +11,9 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
   const mapRef = useRef(null);
   const polylineRef = useRef(null);
   const markersRef = useRef([]);
+  const trafficLayerRef = useRef(null);
 
+  // 初始化地圖
   useEffect(() => {
     if (!googleMaps || !mapElementRef.current || mapRef.current) {
       return;
@@ -28,14 +30,27 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
       clickableIcons: false
     });
 
-    const trafficLayer = new googleMaps.TrafficLayer();
-    trafficLayer.setMap(mapRef.current);
+    trafficLayerRef.current = new googleMaps.TrafficLayer();
+    trafficLayerRef.current.setMap(mapRef.current);
+
+    // 元件卸載時清除地圖資源
+    return () => {
+      if (trafficLayerRef.current) {
+        trafficLayerRef.current.setMap(null);
+        trafficLayerRef.current = null;
+      }
+      clearArtifacts();
+      mapRef.current = null;
+    };
   }, [googleMaps, route, zoom]);
 
+  // 更新路線繪製與標記
   useEffect(() => {
     if (!googleMaps || !mapRef.current || !route) {
       return;
     }
+
+    let isMounted = true;
 
     clearArtifacts();
 
@@ -52,7 +67,8 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
       const destinationPosition = route.destinationPosition || route.path[route.path.length - 1];
 
       loadMarkerClasses().then(({ AdvancedMarkerElement, PinElement }) => {
-        if (!mapRef.current) return;
+        // 非同步完成時若元件已卸載，不執行 DOM 操作
+        if (!isMounted || !mapRef.current) return;
 
         const originPin = new PinElement({
           glyphText: "起",
@@ -88,6 +104,10 @@ export function RouteMapCard({ googleMaps, route, zoom }) {
       mapRef.current.setCenter(originPosition);
       mapRef.current.setZoom(zoom || 14);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [googleMaps, route, zoom]);
 
   function clearArtifacts() {

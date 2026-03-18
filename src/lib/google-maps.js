@@ -22,21 +22,40 @@ export async function loadGoogleMaps() {
     });
 
     mapsPromise = loader.load().then(() => window.google.maps);
+
+    // 載入失敗時清除快取，允許下次重試
+    mapsPromise.catch(() => {
+      mapsPromise = null;
+    });
   }
 
   return mapsPromise;
 }
 
 export async function loadRouteClass() {
+  // 確保 Google Maps 核心已載入，避免 race condition
+  await loadGoogleMaps();
+
   if (!routeClassPromise) {
     routeClassPromise = google.maps.importLibrary("routes").then((lib) => lib.Route);
+
+    routeClassPromise.catch(() => {
+      routeClassPromise = null;
+    });
   }
   return routeClassPromise;
 }
 
 export async function loadMarkerClasses() {
+  // 確保 Google Maps 核心已載入，避免 race condition
+  await loadGoogleMaps();
+
   if (!markerClassPromise) {
     markerClassPromise = google.maps.importLibrary("marker");
+
+    markerClassPromise.catch(() => {
+      markerClassPromise = null;
+    });
   }
   return markerClassPromise;
 }
@@ -84,12 +103,7 @@ export function normalizeRouteFromResponse(routeConfig, route, index) {
   const effectiveDurationMs = route.durationMillis || route.staticDurationMillis || 0;
   const effectiveDurationSeconds = Math.round(effectiveDurationMs / 1000);
 
-  const path = route.path
-    ? route.path.map((point) => ({
-        lat: typeof point.lat === "function" ? point.lat() : point.lat,
-        lng: typeof point.lng === "function" ? point.lng() : point.lng
-      }))
-    : [];
+  const path = route.path ? route.path.map((point) => extractLatLng(point)) : [];
 
   const startLoc = firstLeg?.startLocation?.latLng || firstLeg?.startLocation;
   const endLoc = lastLeg?.endLocation?.latLng || lastLeg?.endLocation;
@@ -104,18 +118,19 @@ export function normalizeRouteFromResponse(routeConfig, route, index) {
     durationText: formatDuration(effectiveDurationSeconds),
     distanceText: formatDistance(totalDistanceMeters),
     durationMinutes: Math.max(1, Math.round(effectiveDurationSeconds / 60)),
-    originPosition: startLoc
-      ? {
-          lat: typeof startLoc.lat === "function" ? startLoc.lat() : (startLoc.latitude ?? startLoc.lat),
-          lng: typeof startLoc.lng === "function" ? startLoc.lng() : (startLoc.longitude ?? startLoc.lng)
-        }
-      : path[0] || null,
-    destinationPosition: endLoc
-      ? {
-          lat: typeof endLoc.lat === "function" ? endLoc.lat() : (endLoc.latitude ?? endLoc.lat),
-          lng: typeof endLoc.lng === "function" ? endLoc.lng() : (endLoc.longitude ?? endLoc.lng)
-        }
-      : path[path.length - 1] || null,
+    originPosition: startLoc ? extractLatLng(startLoc) : path[0] || null,
+    destinationPosition: endLoc ? extractLatLng(endLoc) : path[path.length - 1] || null,
     path
   };
+}
+
+/**
+ * 從各種 Google Maps 座標格式中統一提取 {lat, lng}。
+ * 支援：LatLng 物件（方法）、{lat, lng} 純物件、{latitude, longitude} 格式。
+ */
+function extractLatLng(loc) {
+  if (!loc) return null;
+  const lat = typeof loc.lat === "function" ? loc.lat() : (loc.lat ?? loc.latitude);
+  const lng = typeof loc.lng === "function" ? loc.lng() : (loc.lng ?? loc.longitude);
+  return { lat, lng };
 }

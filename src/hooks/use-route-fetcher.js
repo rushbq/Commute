@@ -85,7 +85,7 @@ export function useRouteFetcher({ activeModule, googleMaps, routeClassRef }) {
       );
       setLastUpdated(new Date());
     } catch (refreshError) {
-      setFetchError(refreshError.message);
+      setFetchError(classifyRouteError(refreshError));
     } finally {
       refreshInFlightRef.current = false;
       setIsRefreshing(false);
@@ -121,4 +121,34 @@ export function useRouteFetcher({ activeModule, googleMaps, routeClassRef }) {
     recommendedRoute: comparison.recommendedRoute,
     comparisonDeltaMinutes: comparison.comparisonDeltaMinutes
   };
+}
+
+/**
+ * 將路線查詢錯誤分類為使用者可理解的訊息。
+ */
+function classifyRouteError(error) {
+  const msg = error?.message || String(error);
+  const status = error?.status || error?.code;
+
+  // API 配額超過限制
+  if (status === "RESOURCE_EXHAUSTED" || status === 429 || /quota|rate.?limit/i.test(msg)) {
+    return "API 配額已用完，請稍後再試或檢查 Google Cloud Console 配額設定。";
+  }
+
+  // API 金鑰問題
+  if (status === "PERMISSION_DENIED" || status === 403 || /api.?key|permission|denied/i.test(msg)) {
+    return "API 金鑰無效或權限不足，請檢查 Google Maps API 設定。";
+  }
+
+  // 無效請求（地址解析失敗等）
+  if (status === "INVALID_ARGUMENT" || status === 400 || /invalid|not.?found/i.test(msg)) {
+    return "路線查詢參數有誤，請檢查起點、終點或途經點設定。";
+  }
+
+  // 網路錯誤
+  if (/network|fetch|timeout|abort|offline/i.test(msg) || error instanceof TypeError) {
+    return "網路連線失敗，請確認網路狀態後再試。";
+  }
+
+  return `路線查詢失敗：${msg}`;
 }

@@ -9,9 +9,11 @@ export function TrafficViewCard({ googleMaps, view }) {
   const mapElementRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const trafficLayerRef = useRef(null);
   const accentColor = view.accentColor || "#336dff";
   const navigationHref = buildGoogleMapsNavigationHref(view);
 
+  // 初始化地圖
   useEffect(() => {
     if (!googleMaps || !mapElementRef.current || mapRef.current) {
       return;
@@ -27,14 +29,30 @@ export function TrafficViewCard({ googleMaps, view }) {
       clickableIcons: false
     });
 
-    const trafficLayer = new googleMaps.TrafficLayer();
-    trafficLayer.setMap(mapRef.current);
+    trafficLayerRef.current = new googleMaps.TrafficLayer();
+    trafficLayerRef.current.setMap(mapRef.current);
+
+    // 元件卸載時清除地圖資源
+    return () => {
+      if (trafficLayerRef.current) {
+        trafficLayerRef.current.setMap(null);
+        trafficLayerRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current.map = null;
+        markerRef.current = null;
+      }
+      mapRef.current = null;
+    };
   }, [googleMaps, view]);
 
+  // 更新 marker 與視角
   useEffect(() => {
     if (!googleMaps || !mapRef.current || !view) {
       return;
     }
+
+    let isMounted = true;
 
     if (markerRef.current) {
       markerRef.current.map = null;
@@ -42,7 +60,8 @@ export function TrafficViewCard({ googleMaps, view }) {
     }
 
     loadMarkerClasses().then(({ AdvancedMarkerElement }) => {
-      if (!mapRef.current) return;
+      // 非同步完成時若元件已卸載，不執行 DOM 操作
+      if (!isMounted || !mapRef.current) return;
 
       const dot = document.createElement("div");
       dot.style.width = "16px";
@@ -62,6 +81,10 @@ export function TrafficViewCard({ googleMaps, view }) {
 
     mapRef.current.setCenter(view.center);
     mapRef.current.setZoom(view.zoom || 14);
+
+    return () => {
+      isMounted = false;
+    };
   }, [googleMaps, view]);
 
   return (
