@@ -1,6 +1,6 @@
-// mmvmbwo6 在 build 時由 Vite 插件替換為 build timestamp（如 "lzqk0g8"）
+// mmvujm32 在 build 時由 Vite 插件替換為 build timestamp（如 "lzqk0g8"）
 // 每次 deploy 都會產生新版本，讓 activate 自動清除舊快取
-const CACHE_VERSION = "mmvmbwo6";
+const CACHE_VERSION = "mmvujm32";
 const APP_SHELL_CACHE = `commute-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `commute-runtime-${CACHE_VERSION}`;
 const MAPS_CACHE = `commute-maps-${CACHE_VERSION}`;
