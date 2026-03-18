@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { AppHeader } from "./components/app-header";
-import { FeatureModeSwitcher } from "./components/feature-mode-switcher";
 import { ModuleSwitcher } from "./components/module-switcher";
-import { RouteMapCard } from "./components/route-map-card";
 import { SettingsPage } from "./components/settings-page";
 import { TrafficViewCard } from "./components/traffic-view-card";
 import { Card, CardContent } from "./components/ui/card";
@@ -16,17 +14,13 @@ export default function App() {
     googleMaps,
     settings,
     activeModule,
-    activeMode,
     modules,
-    availableModes,
     activeModuleId,
-    routeResults,
     trafficViewResults,
     isRefreshing,
     lastUpdated,
     refreshRoutes,
     selectModule,
-    selectMode,
     saveSettings,
     resetSettingsToDefaults
   } = useCommuteChecker();
@@ -63,59 +57,33 @@ export default function App() {
                 settingsHref="#/settings"
               />
 
-              <Card>
-                <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
-                  <div className="grid gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      功能模式
-                    </p>
-                    <FeatureModeSwitcher
-                      availableModes={availableModes}
-                      activeMode={activeMode}
-                      onSelect={selectMode}
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      模組切換
-                    </p>
-                  <ModuleSwitcher
-                    modules={modules}
-                    activeModuleId={activeModuleId}
-                    onSelect={selectModule}
-                  />
-                  </div>
-                </CardContent>
-              </Card>
+              {modules.length > 1 ? (
+                <Card>
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="grid gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        模組切換
+                      </p>
+                      <ModuleSwitcher
+                        modules={modules}
+                        activeModuleId={activeModuleId}
+                        onSelect={selectModule}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
 
               <main className="grid gap-4">
                 <section className="grid gap-4 lg:grid-cols-2">
-                  {activeMode === "traffic" ? (
-                    trafficViewResults.length ? (
-                      trafficViewResults.map((view) => (
-                        <TrafficViewCard key={view.id} googleMaps={googleMaps} view={view} />
-                      ))
-                    ) : (
-                      <Card className="lg:col-span-2">
-                        <CardContent className="p-6 text-sm text-slate-500 dark:text-slate-400">
-                          正在載入這個觀測模組的兩張交通地圖。
-                        </CardContent>
-                      </Card>
-                    )
-                  ) : routeResults.length ? (
-                    routeResults.map((route) => (
-                      <RouteMapCard
-                        key={route.id}
-                        googleMaps={googleMaps}
-                        route={route}
-                        zoom={activeModule?.mapZoom || 14}
-                      />
+                  {trafficViewResults.length ? (
+                    trafficViewResults.map((view) => (
+                      <TrafficViewCard key={view.id} googleMaps={googleMaps} view={view} />
                     ))
                   ) : (
                     <Card className="lg:col-span-2">
                       <CardContent className="p-6 text-sm text-slate-500 dark:text-slate-400">
-                        正在載入這個通勤模組的兩條路線與地圖。
+                        正在載入觀測模組的交通地圖⋯
                       </CardContent>
                     </Card>
                   )}

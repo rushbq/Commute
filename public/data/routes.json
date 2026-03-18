@@ -2,74 +2,10 @@
   "defaultModuleId": "traffic-northbound",
   "modules": [
     {
-      "id": "commute-work",
-      "mode": "route",
-      "name": "上班",
-      "origin": "新北市鶯歌區國光街92號",
-      "destination": "新北市新店區民權路130巷",
-      "mapZoom": 14,
-      "routes": [
-        {
-          "name": "路線 A",
-          "label": "三鶯線",
-          "waypoints": [
-            {
-              "location": "三鶯大橋, 新北市",
-              "stopover": false
-            }
-          ],
-          "strokeColor": "#336dff"
-        },
-        {
-          "name": "路線 B",
-          "label": "樹林線",
-          "waypoints": [
-            {
-              "location": "三鶯二橋, 新北市",
-              "stopover": false
-            }
-          ],
-          "strokeColor": "#7c3aed"
-        }
-      ]
-    },
-    {
-      "id": "commute-home",
-      "mode": "route",
-      "name": "下班",
-      "origin": "新北市新店區民權路130巷",
-      "destination": "新北市鶯歌區國光街92號",
-      "mapZoom": 14,
-      "routes": [
-        {
-          "name": "樹林交流道",
-          "label": "下樹林",
-          "waypoints": [
-            {
-              "location": "三鶯二橋, 新北市",
-              "stopover": false
-            }
-          ],
-          "strokeColor": "#336dff"
-        },
-        {
-          "name": "三鶯交流道",
-          "label": "下鶯歌",
-          "waypoints": [
-            {
-              "location": "三鶯大橋, 新北市",
-              "stopover": false
-            }
-          ],
-          "strokeColor": "#7c3aed"
-        }
-      ]
-    },
-    {
       "id": "traffic-northbound",
       "mode": "traffic",
       "name": "下班路況",
-      "mapZoom": 14,
+      "schedule": "dark",
       "views": [
         {
           "name": "樹林交流道",
@@ -78,7 +14,8 @@
           "center": {
             "lat": 24.9518052,
             "lng": 121.3944133
-          }
+          },
+          "zoom": 14
         },
         {
           "name": "三鶯交流道",
@@ -87,7 +24,8 @@
           "center": {
             "lat": 24.943397,
             "lng": 121.354527
-          }
+          },
+          "zoom": 14
         }
       ]
     },
@@ -95,7 +33,7 @@
       "id": "traffic-southbound",
       "mode": "traffic",
       "name": "上班路況",
-      "mapZoom": 15,
+      "schedule": "light",
       "views": [
         {
           "name": "三鶯交流道",
@@ -104,7 +42,8 @@
           "center": {
             "lat": 24.940134,
             "lng": 121.361936
-          }
+          },
+          "zoom": 15
         },
         {
           "name": "樹林交流道",
@@ -113,7 +52,8 @@
           "center": {
             "lat": 24.951444,
             "lng": 121.386739
-          }
+          },
+          "zoom": 15
         }
       ]
     }

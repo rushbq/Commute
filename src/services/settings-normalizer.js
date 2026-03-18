@@ -1,0 +1,118 @@
+/**
+ * Settings Normalizer Service
+ *
+ * 負責設定資料的正規化、合併、深複製、排程解析。
+ * 純函式，不依賴任何 React 或瀏覽器 API。
+ */
+
+const VALID_SCHEDULES = ["light", "dark", "always"];
+
+export function cloneSettings(settings) {
+  return JSON.parse(JSON.stringify(settings));
+}
+
+export function normalizeSettingsShape(settings) {
+  const modules = Array.isArray(settings?.modules)
+    ? settings.modules
+        .filter((moduleItem) => moduleItem && moduleItem.id)
+        .map((moduleItem, index) => ({
+          id: moduleItem.id || `module-${index + 1}`,
+          mode: moduleItem.mode === "traffic" ? "traffic" : "route",
+          name: moduleItem.name || `模組 ${index + 1}`,
+          schedule: VALID_SCHEDULES.includes(moduleItem.schedule) ? moduleItem.schedule : "always",
+          origin:
+            moduleItem.origin ||
+            moduleItem.routes?.[0]?.origin ||
+            "",
+          destination:
+            moduleItem.destination ||
+            moduleItem.routes?.[0]?.destination ||
+            "",
+          routes: normalizeRoutes(moduleItem.routes),
+          views: normalizeViews(moduleItem.views)
+        }))
+    : [];
+
+  return {
+    defaultModuleId:
+      settings?.defaultModuleId && modules.some((item) => item.id === settings.defaultModuleId)
+        ? settings.defaultModuleId
+        : modules[0]?.id || null,
+    modules
+  };
+}
+
+export function mergeSettings(defaultSettings, storedSettings) {
+  const defaultModules = Array.isArray(defaultSettings?.modules) ? defaultSettings.modules : [];
+  const storedModules = Array.isArray(storedSettings?.modules) ? storedSettings.modules : [];
+  const storedById = new Map(storedModules.map((moduleItem) => [moduleItem.id, moduleItem]));
+  const mergedModules = defaultModules.map((moduleItem) => storedById.get(moduleItem.id) || moduleItem);
+
+  storedModules.forEach((moduleItem) => {
+    if (!defaultModules.some((defaultModule) => defaultModule.id === moduleItem.id)) {
+      mergedModules.push(moduleItem);
+    }
+  });
+
+  return {
+    ...defaultSettings,
+    ...storedSettings,
+    modules: mergedModules
+  };
+}
+
+/**
+ * 根據目前時段（白天 / 夜覽）解析應該預設顯示的模組。
+ * 排程優先順序：精確匹配 > always > 第一個模組。
+ */
+export function resolveScheduledModuleId(modules) {
+  if (!modules?.length) return null;
+
+  const currentPeriod = isNightHours() ? "dark" : "light";
+
+  const periodMatch = modules.find((m) => m.schedule === currentPeriod);
+  if (periodMatch) return periodMatch.id;
+
+  const alwaysMatch = modules.find((m) => m.schedule === "always");
+  if (alwaysMatch) return alwaysMatch.id;
+
+  return modules[0].id;
+}
+
+/**
+ * 判斷目前是否為夜間時段（18:00 ~ 05:00）。
+ * 與主題系統使用相同的時間判斷邏輯。
+ */
+export function isNightHours() {
+  const hour = new Date().getHours();
+  return hour >= 18 || hour < 5;
+}
+
+function normalizeRoutes(routes) {
+  return (Array.isArray(routes) ? routes : []).map((route, index) => ({
+    name: route.name || `路線 ${String.fromCharCode(65 + index)}`,
+    label: route.label || "主要路線",
+    waypoints: Array.isArray(route.waypoints)
+      ? route.waypoints
+          .filter((waypoint) => waypoint && waypoint.location)
+          .map((waypoint) => ({
+            location: waypoint.location,
+            stopover: waypoint.stopover === true
+          }))
+      : [],
+    strokeColor: route.strokeColor || (index === 0 ? "#336dff" : "#7c3aed")
+  }));
+}
+
+function normalizeViews(views) {
+  return (Array.isArray(views) ? views : []).map((view, index) => ({
+    name: view.name || `觀測點 ${index + 1}`,
+    label: view.label || `交通觀測 ${index + 1}`,
+    accentColor: view.accentColor || (index === 0 ? "#336dff" : "#7c3aed"),
+    center: {
+      lat: Number(view.center?.lat) || 25.0478,
+      lng: Number(view.center?.lng) || 121.5319
+    },
+    zoom: Number(view.zoom) || 14
+  }));
+}

@@ -19,7 +19,7 @@ export function TrafficViewCard({ googleMaps, view }) {
 
     mapRef.current = new googleMaps.Map(mapElementRef.current, {
       center: view.center,
-      zoom: view.zoom || 13,
+      zoom: view.zoom || 14,
       mapId: APP_CONFIG.googleMapsMapId,
       disableDefaultUI: true,
       zoomControl: true,
@@ -61,7 +61,7 @@ export function TrafficViewCard({ googleMaps, view }) {
     });
 
     mapRef.current.setCenter(view.center);
-    mapRef.current.setZoom(view.zoom || 13);
+    mapRef.current.setZoom(view.zoom || 14);
   }, [googleMaps, view]);
 
   return (
