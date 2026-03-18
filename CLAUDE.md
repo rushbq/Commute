@@ -76,10 +76,14 @@ src/hooks/
 src/components/
 ├── app-header.jsx           # 頁首（標題、更新按鈕、設定按鈕）
 ├── module-switcher.jsx      # 模組切換（上班路況 / 下班路況等）
-├── traffic-view-card.jsx    # 交通觀測地圖卡
+├── view-group-card.jsx      # 觀測群組地圖卡（首頁使用）
+├── traffic-view-card.jsx    # 交通觀測地圖卡（保留，目前未使用）
 ├── settings-page.jsx        # 設定頁（主題切換、模組管理）
 ├── module-editor.jsx        # 模組編輯器（含排程設定）
-├── traffic-view-editor.jsx  # 觀測點編輯器（含地圖縮放）
+├── view-group-editor.jsx    # 觀測群組編輯器（群組名、縮放、子觀測點）
+├── sub-view-editor.jsx      # 子觀測點編輯器（名稱、座標、途經點）
+├── coordinate-input.jsx     # 座標輸入元件（支援 Google Maps 連結解析）
+├── traffic-view-editor.jsx  # 觀測點編輯器（保留，目前未使用）
 ├── feature-mode-switcher.jsx # 功能模式切換（保留，目前未使用）
 ├── route-card.jsx           # 路線資訊卡（保留，目前未使用）
 ├── route-map-card.jsx       # 路線地圖卡（保留，目前未使用）
@@ -88,7 +92,7 @@ src/components/
     ├── badge.jsx
     ├── button.jsx
     ├── card.jsx
-    ├── input.jsx            # Input、ColorInput
+    ├── input.jsx            # Input（支援 type/min/max/step）、ColorInput
     └── separator.jsx
 ```
 
@@ -181,13 +185,19 @@ src/lib/
       mode: "traffic",              // 目前僅支援 traffic
       name: string,                 // 顯示名稱
       schedule: "light" | "dark" | "always",  // 排程時段
-      views: [                      // 觀測點定義
+      origin: string,              // 導航起點（地址或座標）
+      destination: string,         // 導航終點（地址或座標）
+      viewGroups: [                // 觀測群組
         {
-          name: string,
-          label: string,
-          accentColor: string,      // Hex 色碼
-          center: { lat: number, lng: number },
-          zoom: number              // 每個觀測點獨立的地圖縮放
+          name: string,            // 群組名稱
+          zoom: number,            // 共用地圖縮放等級
+          views: [                 // 子觀測點（上限 3 個）
+            {
+              name: string,
+              center: { lat: number, lng: number },
+              isWaypoint: boolean  // 是否為導航途經點
+            }
+          ]
         }
       ]
     }
@@ -216,7 +226,8 @@ src/lib/
 - Auto 模式：PM 6:00 ~ AM 5:00 為 dark
 - 透過 `<html>` 元素的 `dark` class 切換
 - localStorage key: `commute-checker-theme`
-- 地圖樣式由 Google Cloud Console Map ID 管理
+- 地圖底圖由 Google Cloud Console Map ID 管理
+- 地圖色彩模式透過 `colorScheme: "DARK" | "LIGHT"` 與主題同步，切換時以 `map.setOptions()` 即時更新
 
 ## 環境變數
 
@@ -225,7 +236,37 @@ src/lib/
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API Key | （必填） |
 | `VITE_GOOGLE_MAPS_MAP_ID` | Cloud Console Map ID | `DEMO_MAP_ID` |
 | `VITE_APP_TITLE` | 應用程式標題 | `通勤小工具` |
-| `VITE_APP_SUBTITLE` | 副標題 | `Commute Checker` |
+| `VITE_APP_SUBTITLE` | 副標題 | `Commute Tool` |
+
+## 手機優先設計原則
+
+本專案以手機為主要使用情境（375px），設定頁包含多層巢狀容器，設計 UI 時必須注意以下原則。
+
+### 巢狀容器 padding 累積問題
+
+設定頁結構為：App 容器 → 模組編輯器 → 觀測群組編輯器 → 子觀測點編輯器。
+每層都有 `border` + `padding`，累積後會大幅壓縮實際內容可用寬度。
+
+**375px 手機的寬度預算（單側）：**
+
+| 層級 | padding | border | 小計 |
+|------|---------|--------|------|
+| App 容器 (`px-4`) | 16px | — | 16px |
+| 模組編輯器 (`p-3`) | 12px | 2px | 14px |
+| 群組編輯器 (`p-2.5`) | 10px | 2px | 12px |
+| 子觀測點 (`p-2`) | 8px | 1px | 9px |
+| **合計（單側）** | | | **51px** |
+| **雙側合計** | | | **102px** |
+
+實際內容可用寬度 ≈ 375 − 102 = **273px**。
+
+**設計規則：**
+
+1. **巢狀容器使用響應式 padding**：內層容器在手機上使用較小的 padding（如 `p-2 sm:p-3`），桌面版才放大
+2. **所有巢狀容器必須加上 `min-w-0`**：防止 grid/flex 子元素因內容撐開而溢出
+3. **深層容器加上 `overflow-hidden`**：作為最後防線，避免內容超出邊界
+4. **按鈕群組使用 `flex-wrap`**：多個並排按鈕（如排程選擇、主題切換）在窄螢幕時自動換行，**禁止**使用 `shrink-0`
+5. **新增巢狀層級前先計算寬度預算**：確保最內層仍有足夠的內容空間（建議 ≥ 250px）
 
 ## 品牌色彩
 
@@ -244,8 +285,8 @@ src/lib/
 |------|------|
 | 1 | `#336dff`（藍） |
 | 2 | `#7c3aed`（紫） |
-| 3 | `#059669`（綠） |
-| 4 | `#d97706`（橘） |
+| 3 | `#d97706`（橘） |
+| 4 | `#059669`（綠） |
 | 5 | `#dc2626`（紅） |
 | 6 | `#0891b2`（青） |
 

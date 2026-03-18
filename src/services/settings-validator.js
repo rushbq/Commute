@@ -106,8 +106,8 @@ export const SCHEDULE_OPTIONS = [
 export const MODULE_PALETTE = [
   { border: "#336dff", bg: "rgba(51,109,255,0.06)", text: "#336dff" },
   { border: "#7c3aed", bg: "rgba(124,58,237,0.06)", text: "#7c3aed" },
-  { border: "#059669", bg: "rgba(5,150,105,0.06)", text: "#059669" },
   { border: "#d97706", bg: "rgba(217,119,6,0.06)", text: "#d97706" },
+  { border: "#059669", bg: "rgba(5,150,105,0.06)", text: "#059669" },
   { border: "#dc2626", bg: "rgba(220,38,38,0.06)", text: "#dc2626" },
   { border: "#0891b2", bg: "rgba(8,145,178,0.06)", text: "#0891b2" }
 ];
