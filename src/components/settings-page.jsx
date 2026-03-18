@@ -1,4 +1,4 @@
-import { LoaderCircle, Moon, Plus, RotateCcw, Save, Sun, X } from "lucide-react";
+import { LoaderCircle, Moon, Plus, RotateCcw, Save, Sun, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "../hooks/use-theme";
 import { validateSettings, createDefaultTrafficViews } from "../services/settings-validator";
@@ -12,7 +12,7 @@ const THEME_OPTIONS = [
   { value: "auto", label: "自動切換" }
 ];
 
-export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) {
+export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAndReload, homeHref }) {
   const { theme, setTheme } = useTheme();
   const [draft, setDraft] = useState(() => cloneSettings(settings));
   const [validationErrors, setValidationErrors] = useState([]);
@@ -108,11 +108,24 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
 
     try {
       await onResetToDefaults();
+      window.location.hash = "#/";
     } catch (error) {
       setSaveError(error.message);
     } finally {
       setIsResetting(false);
     }
+  }
+
+  function handleClearAllAndReload() {
+    const confirmed = window.confirm(
+      "這會清除本機所有快取資料（設定、模組、主題），並重新載入頁面，完全恢復為初始狀態。\n\n如果 App 顯示異常或舊資料無法清除，請使用此功能。確定要繼續嗎？"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    onClearAllAndReload();
   }
 
   return (
@@ -215,6 +228,24 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, homeHref }) 
             目前還沒有模組。可直接按上方的「新增模組」。
           </div>
         ) : null}
+      </div>
+
+      {/* 緊急重設區 */}
+      <div className="rounded-[22px] border border-red-100 bg-red-50/50 p-4 dark:border-red-900/40 dark:bg-red-950/20">
+        <p className="text-sm font-semibold text-red-700 dark:text-red-400">緊急清除快取</p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          若 App 顯示異常、資料損毀，或升級後舊設定無法清除，請使用此功能。
+          將清除所有本機資料並重新載入頁面。
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-3 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/50"
+          onClick={handleClearAllAndReload}
+        >
+          <Trash2 className="h-4 w-4" />
+          清除所有快取資料並重新載入
+        </Button>
       </div>
 
       {/* 底部操作列 */}

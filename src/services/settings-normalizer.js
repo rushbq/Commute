@@ -7,6 +7,22 @@
 
 const VALID_SCHEDULES = ["light", "dark", "always"];
 
+/**
+ * 檢查已儲存的設定是否與目前架構相容。
+ * 不相容時 bootstrap 會忽略舊資料，直接從 routes.json 重新初始化。
+ *
+ * 判斷條件：必須至少有一個 traffic 模式模組，且有 schedule 欄位。
+ */
+export function isSettingsCompatible(storedSettings) {
+  const modules = storedSettings?.modules;
+  if (!Array.isArray(modules) || !modules.length) return false;
+
+  const hasTrafficModule = modules.some((m) => m.mode === "traffic");
+  const hasScheduleField = modules.some((m) => m.schedule != null);
+
+  return hasTrafficModule && hasScheduleField;
+}
+
 export function cloneSettings(settings) {
   return JSON.parse(JSON.stringify(settings));
 }

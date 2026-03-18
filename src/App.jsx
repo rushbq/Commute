@@ -22,7 +22,8 @@ export default function App() {
     refreshRoutes,
     selectModule,
     saveSettings,
-    resetSettingsToDefaults
+    resetSettingsToDefaults,
+    clearAllAndReload
   } = useCommuteChecker();
   const [page, setPage] = useState(resolvePageFromHash());
 
@@ -44,6 +45,7 @@ export default function App() {
               settings={settings}
               onSave={saveSettings}
               onResetToDefaults={resetSettingsToDefaults}
+              onClearAllAndReload={clearAllAndReload}
               homeHref="#/"
             />
           ) : (

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cloneSettings, mergeSettings, normalizeSettingsShape, resolveScheduledModuleId } from "../services/settings-normalizer";
+import { cloneSettings, isSettingsCompatible, mergeSettings, normalizeSettingsShape, resolveScheduledModuleId } from "../services/settings-normalizer";
 import { loadRoutesConfig } from "../services/route-resolver";
 import { loadGoogleMaps, loadRouteClass } from "../lib/google-maps";
 import { createSettingsStorageAdapter } from "../lib/settings-storage";
@@ -51,8 +51,14 @@ export function useSettingsManager() {
         if (cancelled) return;
 
         const normalizedDefaultSettings = normalizeSettingsShape(defaultSettings);
-        const nextSettings = storedSettings
-          ? normalizeSettingsShape(mergeSettings(normalizedDefaultSettings, storedSettings))
+
+        // 相容性檢查：若舊資料架構不相容（如 v2 的 route 模組），直接忽略並以 routes.json 重新初始化
+        const compatibleStoredSettings = storedSettings && isSettingsCompatible(storedSettings)
+          ? storedSettings
+          : null;
+
+        const nextSettings = compatibleStoredSettings
+          ? normalizeSettingsShape(mergeSettings(normalizedDefaultSettings, compatibleStoredSettings))
           : normalizedDefaultSettings;
 
         // 根據排程解析預設模組（忽略已儲存的模組 ID，每次開啟都依時段決定）
@@ -125,6 +131,22 @@ export function useSettingsManager() {
     return { activeModuleId: nextActiveModuleId };
   }
 
+  /**
+   * 清除所有本機快取資料並重新載入頁面。
+   * 用於架構升級後舊裝置無法正常運作的緊急重設情境。
+   */
+  async function clearAllAndReload() {
+    try {
+      const storage = settingsStorageRef.current;
+      await storage.clearSettings();
+      await storage.clearActiveModuleId();
+    } catch {
+      // ignore — 就算清除失敗，reload 後會以 routes.json 重新初始化
+    }
+
+    window.location.reload();
+  }
+
   return {
     googleMaps,
     settings,
@@ -137,6 +159,7 @@ export function useSettingsManager() {
     routeClassRef,
     selectModule,
     saveSettings,
-    resetSettingsToDefaults
+    resetSettingsToDefaults,
+    clearAllAndReload
   };
 }

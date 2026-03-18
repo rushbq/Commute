@@ -51,6 +51,7 @@ export function useCommuteChecker() {
     refreshRoutes: routeFetcher.refreshRoutes,
     selectModule,
     saveSettings,
-    resetSettingsToDefaults
+    resetSettingsToDefaults,
+    clearAllAndReload: settingsManager.clearAllAndReload
   };
 }
