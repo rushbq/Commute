@@ -1,7 +1,10 @@
-import { Trash2 } from "lucide-react";
-import { ensureTrafficViews, SCHEDULE_OPTIONS, getModulePaletteColor } from "../services/settings-validator";
-import { TrafficViewEditor } from "./traffic-view-editor";
+import { Plus, Trash2 } from "lucide-react";
+import { SCHEDULE_OPTIONS, getModulePaletteColor } from "../services/settings-validator";
+import { ViewGroupEditor } from "./view-group-editor";
+import { PlaceInput } from "./coordinate-input";
 import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Separator } from "./ui/separator";
 
 export function ModuleEditor({
   moduleItem,
@@ -11,6 +14,37 @@ export function ModuleEditor({
   moduleIndex
 }) {
   const palette = getModulePaletteColor(moduleIndex);
+  const viewGroups = moduleItem.viewGroups || [];
+
+  function updateViewGroup(groupIndex, updater) {
+    onChange((current) => ({
+      ...current,
+      viewGroups: (current.viewGroups || []).map((g, i) =>
+        i === groupIndex ? updater(g) : g
+      )
+    }));
+  }
+
+  function removeViewGroup(groupIndex) {
+    onChange((current) => ({
+      ...current,
+      viewGroups: (current.viewGroups || []).filter((_, i) => i !== groupIndex)
+    }));
+  }
+
+  function addViewGroup() {
+    onChange((current) => ({
+      ...current,
+      viewGroups: [
+        ...(current.viewGroups || []),
+        {
+          name: "",
+          zoom: 14,
+          views: [{ name: "", center: { lat: "", lng: "" }, isWaypoint: false }]
+        }
+      ]
+    }));
+  }
 
   return (
     <div
@@ -55,7 +89,7 @@ export function ModuleEditor({
       </div>
 
       {/* 模組設定區 */}
-      <div className="grid gap-3 p-4">
+      <div className="grid gap-4 p-4">
         <Input
           label="模組名稱"
           required
@@ -86,35 +120,59 @@ export function ModuleEditor({
               </button>
             ))}
           </div>
+        </div>
+
+        <Separator />
+
+        {/* 導航路線設定 */}
+        <div className="grid gap-3">
+          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            導航路線
+          </span>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            白天 = 05:00–18:00；夜覽 = 18:00–05:00；全時段 = 任何時段皆可做為預設。
+            設定起點與終點後，首頁每個群組卡片的導航鈕會自動帶入路線。將觀測點設為「途經點」即可加入導航路線。
           </p>
-        </div>
 
-        {/* 觀測點設定 */}
-        <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-800/80">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">交通觀測點設定</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            每個觀測點可獨立設定中心座標與地圖縮放等級。
-          </p>
-        </div>
-
-        {ensureTrafficViews(moduleItem.views).map((view, viewIndex) => (
-          <TrafficViewEditor
-            key={`${moduleItem.id}-view-${viewIndex}`}
-            view={view}
-            viewIndex={viewIndex}
-            moduleColor={palette.border}
-            onChange={(updater) =>
-              onChange((current) => ({
-                ...current,
-                views: ensureTrafficViews(current.views).map((item, index) =>
-                  index === viewIndex ? updater(item) : item
-                )
-              }))
-            }
+          <PlaceInput
+            label="起點"
+            value={moduleItem.origin || ""}
+            onChange={(value) => onChange((current) => ({ ...current, origin: value }))}
+            optional
           />
-        ))}
+
+          <PlaceInput
+            label="終點"
+            value={moduleItem.destination || ""}
+            onChange={(value) => onChange((current) => ({ ...current, destination: value }))}
+            optional
+          />
+        </div>
+
+        <Separator />
+
+        {/* 觀測群組設定 */}
+        <div className="grid gap-3">
+          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            觀測群組
+          </span>
+
+          {viewGroups.map((group, groupIndex) => (
+            <ViewGroupEditor
+              key={`${moduleItem.id}-group-${groupIndex}`}
+              viewGroup={group}
+              viewGroupIndex={groupIndex}
+              moduleColor={palette}
+              onChange={(updater) => updateViewGroup(groupIndex, updater)}
+              onRemove={() => removeViewGroup(groupIndex)}
+              allowRemove={viewGroups.length > 1}
+            />
+          ))}
+
+          <Button variant="secondary" size="sm" onClick={addViewGroup} type="button" className="w-full">
+            <Plus className="h-4 w-4" />
+            新增觀測群組
+          </Button>
+        </div>
       </div>
     </div>
   );

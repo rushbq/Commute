@@ -16,15 +16,36 @@ export function validateSettings(settings) {
     }
 
     if ((moduleItem.mode || "route") === "traffic") {
-      ensureTrafficViews(moduleItem.views).forEach((view, viewIndex) => {
-        if (!Number.isFinite(Number(view.center?.lat))) {
-          errors.push(`${moduleName} / 觀測點 ${viewIndex + 1}：中心緯度為必填`);
+      // 驗證 viewGroups（新結構）
+      const viewGroups = Array.isArray(moduleItem.viewGroups) ? moduleItem.viewGroups : [];
+
+      viewGroups.forEach((group, groupIndex) => {
+        const groupName = group.name?.trim() || `群組 ${groupIndex + 1}`;
+
+        if (!group.name?.trim()) {
+          errors.push(`${moduleName} / 群組 ${groupIndex + 1}：群組名稱為必填`);
         }
 
-        if (!Number.isFinite(Number(view.center?.lng))) {
-          errors.push(`${moduleName} / 觀測點 ${viewIndex + 1}：中心經度為必填`);
+        const views = Array.isArray(group.views) ? group.views : [];
+
+        if (views.length === 0) {
+          errors.push(`${moduleName} / ${groupName}：至少需要一個觀測點`);
         }
+
+        views.forEach((view, viewIndex) => {
+          if (!Number.isFinite(Number(view.center?.lat))) {
+            errors.push(`${moduleName} / ${groupName} / 觀測點 ${viewIndex + 1}：緯度為必填`);
+          }
+
+          if (!Number.isFinite(Number(view.center?.lng))) {
+            errors.push(`${moduleName} / ${groupName} / 觀測點 ${viewIndex + 1}：經度為必填`);
+          }
+        });
       });
+
+      if (viewGroups.length === 0) {
+        errors.push(`${moduleName}：至少需要一個觀測群組`);
+      }
     } else {
       if (!moduleItem.origin?.trim()) {
         errors.push(`${moduleName}：共用起點為必填`);
@@ -93,4 +114,29 @@ export const MODULE_PALETTE = [
 
 export function getModulePaletteColor(index) {
   return MODULE_PALETTE[index % MODULE_PALETTE.length];
+}
+
+/**
+ * 子觀測點色彩調色盤，用於首頁卡片區分同群組內的觀測點。
+ */
+export const SUB_VIEW_PALETTE = ["#336dff", "#7c3aed", "#d97706"];
+export const MAX_SUB_VIEWS = 3;
+
+export function getSubViewColor(index) {
+  return SUB_VIEW_PALETTE[index % SUB_VIEW_PALETTE.length];
+}
+
+/**
+ * 建立預設 viewGroups 結構（新模組用）。
+ */
+export function createDefaultViewGroups() {
+  return [
+    {
+      name: "",
+      zoom: 14,
+      views: [
+        { name: "", center: { lat: "", lng: "" }, isWaypoint: false }
+      ]
+    }
+  ];
 }

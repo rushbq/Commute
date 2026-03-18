@@ -7,11 +7,12 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { APP_CONFIG } from "../lib/config";
-import { buildTrafficViews, pickFastestRoute, requestRoute, computeRouteComparison } from "../services/route-resolver";
+import { buildTrafficViews, buildTrafficViewGroups, pickFastestRoute, requestRoute, computeRouteComparison } from "../services/route-resolver";
 
 export function useRouteFetcher({ activeModule, googleMaps, routeClassRef }) {
   const [routeResults, setRouteResults] = useState([]);
   const [trafficViewResults, setTrafficViewResults] = useState([]);
+  const [trafficViewGroupResults, setTrafficViewGroupResults] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [fetchError, setFetchError] = useState("");
@@ -30,6 +31,7 @@ export function useRouteFetcher({ activeModule, googleMaps, routeClassRef }) {
     if (activeModule.mode === "traffic") {
       try {
         setTrafficViewResults(buildTrafficViews(activeModule));
+        setTrafficViewGroupResults(buildTrafficViewGroups(activeModule));
         setLastUpdated(new Date());
       } catch (trafficError) {
         setFetchError(trafficError.message);
@@ -106,6 +108,7 @@ export function useRouteFetcher({ activeModule, googleMaps, routeClassRef }) {
   function clearResults() {
     setRouteResults([]);
     setTrafficViewResults([]);
+    setTrafficViewGroupResults([]);
   }
 
   const comparison = computeRouteComparison(routeResults);
@@ -113,6 +116,7 @@ export function useRouteFetcher({ activeModule, googleMaps, routeClassRef }) {
   return {
     routeResults,
     trafficViewResults,
+    trafficViewGroupResults,
     isRefreshing,
     lastUpdated,
     fetchError,

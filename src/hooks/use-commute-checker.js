@@ -44,6 +44,7 @@ export function useCommuteChecker() {
     activeModuleId: settingsManager.activeModuleId,
     modules: settingsManager.modules,
     trafficViewResults: routeFetcher.trafficViewResults,
+    trafficViewGroupResults: routeFetcher.trafficViewGroupResults,
     error,
     isBooting: settingsManager.isBooting,
     isRefreshing: routeFetcher.isRefreshing,

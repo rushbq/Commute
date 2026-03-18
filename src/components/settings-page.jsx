@@ -1,7 +1,7 @@
 import { LoaderCircle, Moon, Plus, RotateCcw, Save, Sun, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "../hooks/use-theme";
-import { validateSettings, createDefaultTrafficViews } from "../services/settings-validator";
+import { validateSettings, createDefaultViewGroups } from "../services/settings-validator";
 import { ModuleEditor } from "./module-editor";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -55,7 +55,11 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAn
           mode: "traffic",
           name: `觀測模組 ${nextIndex}`,
           schedule: "always",
-          views: createDefaultTrafficViews()
+          origin: "",
+          waypoints: [],
+          destination: "",
+          viewGroups: createDefaultViewGroups(),
+          views: []
         }
       ]
     }));
@@ -184,9 +188,6 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAn
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">交通觀測模組</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            緯度與經度可在 Google Map 上查詢。每個觀測點可獨立設定地圖縮放。
-          </p>
         </div>
         <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={addModule}>
           <Plus className="h-4 w-4" />

@@ -3,7 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { AppHeader } from "./components/app-header";
 import { ModuleSwitcher } from "./components/module-switcher";
 import { SettingsPage } from "./components/settings-page";
-import { TrafficViewCard } from "./components/traffic-view-card";
+import { ViewGroupCard } from "./components/view-group-card";
 import { Card, CardContent } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { APP_CONFIG } from "./lib/config";
@@ -19,7 +19,7 @@ export default function App() {
     activeModule,
     modules,
     activeModuleId,
-    trafficViewResults,
+    trafficViewGroupResults,
     isRefreshing,
     lastUpdated,
     refreshRoutes,
@@ -97,9 +97,13 @@ export default function App() {
 
               <main className="grid gap-4">
                 <section className="grid gap-4 lg:grid-cols-2">
-                  {trafficViewResults.length ? (
-                    trafficViewResults.map((view) => (
-                      <TrafficViewCard key={view.id} googleMaps={googleMaps} view={view} />
+                  {trafficViewGroupResults.length ? (
+                    trafficViewGroupResults.map((viewGroup) => (
+                      <ViewGroupCard
+                        key={viewGroup.id}
+                        googleMaps={googleMaps}
+                        viewGroup={viewGroup}
+                      />
                     ))
                   ) : (
                     <Card className="lg:col-span-2">
