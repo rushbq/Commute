@@ -1,11 +1,13 @@
 import { MapPinned, Navigation } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useTheme } from "../hooks/use-theme";
 import { APP_CONFIG } from "../lib/config";
 import { loadMarkerClasses } from "../lib/google-maps";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 
 export function TrafficViewCard({ googleMaps, view }) {
+  const { resolvedTheme } = useTheme();
   const mapElementRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
@@ -23,6 +25,7 @@ export function TrafficViewCard({ googleMaps, view }) {
       center: view.center,
       zoom: view.zoom || 14,
       mapId: APP_CONFIG.googleMapsMapId,
+      colorScheme: resolvedTheme === "dark" ? "DARK" : "LIGHT",
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
@@ -45,6 +48,14 @@ export function TrafficViewCard({ googleMaps, view }) {
       mapRef.current = null;
     };
   }, [googleMaps, view]);
+
+  // 同步地圖色彩模式與主題
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setOptions({
+      colorScheme: resolvedTheme === "dark" ? "DARK" : "LIGHT"
+    });
+  }, [resolvedTheme]);
 
   // 更新 marker 與視角
   useEffect(() => {

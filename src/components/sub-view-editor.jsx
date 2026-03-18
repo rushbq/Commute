@@ -20,7 +20,7 @@ export function SubViewEditor({ view, viewIndex, onChange, onRemove, allowRemove
 
   return (
     <div
-      className="rounded-2xl border p-3 space-y-3"
+      className="min-w-0 overflow-hidden rounded-2xl border p-2 sm:p-3 space-y-3"
       style={{ borderColor: `${color}33`, backgroundColor: `${color}06` }}
     >
       <div className="flex items-center justify-between gap-2">

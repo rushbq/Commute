@@ -96,6 +96,10 @@ export function TrafficViewEditor({ view, viewIndex, moduleColor, onChange }) {
             label="地圖縮放"
             optional
             hint="預設 14"
+            type="number"
+            min={1}
+            max={22}
+            step={1}
             value={String(view.zoom || 14)}
             onChange={(value) =>
               onChange((current) => ({

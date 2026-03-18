@@ -50,7 +50,7 @@ export function ViewGroupEditor({ viewGroup, viewGroupIndex, moduleColor, onChan
 
   return (
     <div
-      className="rounded-[20px] border-2 p-4 space-y-4"
+      className="min-w-0 overflow-hidden rounded-[20px] border-2 p-2.5 sm:p-4 space-y-4"
       style={{ borderColor: `${moduleColor.border}40`, backgroundColor: moduleColor.bg }}
     >
       {/* 群組標題列 */}

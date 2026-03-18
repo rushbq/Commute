@@ -157,15 +157,15 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAn
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
               主題外觀
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Sun className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {THEME_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setTheme(option.value)}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                       theme === option.value
                         ? "border-brand-500 bg-brand-500 text-white shadow-glow"
                         : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"

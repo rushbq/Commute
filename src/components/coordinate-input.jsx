@@ -93,7 +93,7 @@ export function CoordinateInput({ center, onChange }) {
           <Link className="h-3 w-3" />
           貼上 Google Maps 連結
         </span>
-        <div className="flex gap-2">
+        <div className="flex min-w-0 gap-2">
           <input
             className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-brand-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             placeholder="連結或座標（如 24.95,121.39）"
@@ -105,7 +105,7 @@ export function CoordinateInput({ center, onChange }) {
             }}
             onPaste={handlePaste}
           />
-          <Button variant="secondary" size="sm" onClick={handleParse} type="button">
+          <Button variant="secondary" size="sm" className="shrink-0" onClick={handleParse} type="button">
             解析
           </Button>
         </div>

@@ -89,7 +89,7 @@ export function ModuleEditor({
       </div>
 
       {/* 模組設定區 */}
-      <div className="grid gap-4 p-4">
+      <div className="grid gap-4 p-3 sm:p-4">
         <Input
           label="模組名稱"
           required
@@ -102,7 +102,7 @@ export function ModuleEditor({
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
             首頁排程
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {SCHEDULE_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -110,7 +110,7 @@ export function ModuleEditor({
                 onClick={() =>
                   onChange((current) => ({ ...current, schedule: option.value }))
                 }
-                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                   (moduleItem.schedule || "always") === option.value
                     ? "border-brand-500 bg-brand-500 text-white shadow-glow"
                     : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"

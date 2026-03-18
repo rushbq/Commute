@@ -10,8 +10,8 @@
       "destination": "新北市鶯歌區國光街92號",
       "viewGroups": [
         {
-          "name": "樹林交流道",
-          "zoom": 15,
+          "name": "走樹林",
+          "zoom": 16,
           "views": [
             {
               "name": "樹林交流道",
@@ -32,8 +32,8 @@
           ]
         },
         {
-          "name": "三鶯交流道",
-          "zoom": 16,
+          "name": "下三鶯",
+          "zoom": 17,
           "views": [
             {
               "name": "三鶯交流道",

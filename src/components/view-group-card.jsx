@@ -1,5 +1,6 @@
 import { MapPinned, Navigation } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "../hooks/use-theme";
 import { APP_CONFIG } from "../lib/config";
 import { loadMarkerClasses } from "../lib/google-maps";
 import { getSubViewColor } from "../services/settings-validator";
@@ -16,6 +17,7 @@ import { Button } from "./ui/button";
  * }} props
  */
 export function ViewGroupCard({ googleMaps, viewGroup }) {
+  const { resolvedTheme } = useTheme();
   const [activeViewIndex, setActiveViewIndex] = useState(0);
   const mapElementRef = useRef(null);
   const mapRef = useRef(null);
@@ -36,6 +38,7 @@ export function ViewGroupCard({ googleMaps, viewGroup }) {
       center: activeView?.center,
       zoom: viewGroup.zoom || 14,
       mapId: APP_CONFIG.googleMapsMapId,
+      colorScheme: resolvedTheme === "dark" ? "DARK" : "LIGHT",
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
@@ -57,6 +60,14 @@ export function ViewGroupCard({ googleMaps, viewGroup }) {
       mapRef.current = null;
     };
   }, [googleMaps]);
+
+  // 同步地圖色彩模式與主題
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setOptions({
+      colorScheme: resolvedTheme === "dark" ? "DARK" : "LIGHT"
+    });
+  }, [resolvedTheme]);
 
   // 更新 marker 與視角（切換子觀測點時）
   useEffect(() => {
