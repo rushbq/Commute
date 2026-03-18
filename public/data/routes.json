@@ -6,8 +6,8 @@
       "mode": "traffic",
       "name": "下班路況",
       "schedule": "dark",
-      "origin": "",
-      "destination": "",
+      "origin": "新北市民權路130巷",
+      "destination": "新北市鶯歌區國光街92號",
       "viewGroups": [
         {
           "name": "樹林交流道",
@@ -19,13 +19,21 @@
                 "lat": 24.9518052,
                 "lng": 121.3944133
               },
-              "isWaypoint": false
+              "isWaypoint": true
+            },
+            {
+              "name": "學府路",
+              "center": {
+                "lat": 24.9508918,
+                "lng": 121.383177
+              },
+              "isWaypoint": true
             }
           ]
         },
         {
           "name": "三鶯交流道",
-          "zoom": 14,
+          "zoom": 15,
           "views": [
             {
               "name": "三鶯交流道",
@@ -33,31 +41,17 @@
                 "lat": 24.943397,
                 "lng": 121.354527
               },
-              "isWaypoint": false
+              "isWaypoint": true
+            },
+            {
+              "name": "文化路",
+              "center": {
+                "lat": 24.9506351,
+                "lng": 121.3526155
+              },
+              "isWaypoint": true
             }
           ]
-        }
-      ],
-      "views": [
-        {
-          "name": "樹林交流道",
-          "label": "下樹林",
-          "accentColor": "#7c3aed",
-          "center": {
-            "lat": 24.9518052,
-            "lng": 121.3944133
-          },
-          "zoom": 15
-        },
-        {
-          "name": "三鶯交流道",
-          "label": "下三鶯",
-          "accentColor": "#336dff",
-          "center": {
-            "lat": 24.943397,
-            "lng": 121.354527
-          },
-          "zoom": 14
         }
       ]
     },
@@ -71,8 +65,24 @@
       "viewGroups": [
         {
           "name": "三鶯交流道",
-          "zoom": 15,
+          "zoom": 16,
           "views": [
+            {
+              "name": "國慶街",
+              "center": {
+                "lat": 24.954411,
+                "lng": 121.350232
+              },
+              "isWaypoint": false
+            },
+            {
+              "name": "陶博館",
+              "center": {
+                "lat": 24.949705,
+                "lng": 121.3525566
+              },
+              "isWaypoint": false
+            },
             {
               "name": "三鶯交流道",
               "center": {
@@ -88,36 +98,30 @@
           "zoom": 15,
           "views": [
             {
+              "name": "中山路",
+              "center": {
+                "lat": 24.9569995,
+                "lng": 121.3527753
+              },
+              "isWaypoint": false
+            },
+            {
+              "name": "學府路",
+              "center": {
+                "lat": 24.9508918,
+                "lng": 121.383177
+              },
+              "isWaypoint": false
+            },
+            {
               "name": "樹林交流道",
               "center": {
-                "lat": 24.951444,
-                "lng": 121.386739
+                "lat": 24.950953,
+                "lng": 121.395931
               },
               "isWaypoint": false
             }
           ]
-        }
-      ],
-      "views": [
-        {
-          "name": "三鶯交流道",
-          "label": "上三鶯",
-          "accentColor": "#336dff",
-          "center": {
-            "lat": 24.940134,
-            "lng": 121.361936
-          },
-          "zoom": 15
-        },
-        {
-          "name": "樹林交流道",
-          "label": "上樹林",
-          "accentColor": "#7c3aed",
-          "center": {
-            "lat": 24.951444,
-            "lng": 121.386739
-          },
-          "zoom": 15
         }
       ]
     }
