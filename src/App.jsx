@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
+import { RefreshCw } from "lucide-react";
 import { AppHeader } from "./components/app-header";
 import { ModuleSwitcher } from "./components/module-switcher";
 import { SettingsPage } from "./components/settings-page";
 import { TrafficViewCard } from "./components/traffic-view-card";
 import { Card, CardContent } from "./components/ui/card";
+import { Button } from "./components/ui/button";
 import { APP_CONFIG } from "./lib/config";
 import { useCommuteChecker } from "./hooks/use-commute-checker";
 import { ThemeContext, useThemeProvider } from "./hooks/use-theme";
+import { useSwUpdate } from "./hooks/use-sw-update";
 
 export default function App() {
   const themeValue = useThemeProvider();
@@ -25,6 +28,7 @@ export default function App() {
     resetSettingsToDefaults,
     clearAllAndReload
   } = useCommuteChecker();
+  const { updateAvailable, applyUpdate } = useSwUpdate();
   const [page, setPage] = useState(resolvePageFromHash());
 
   useEffect(() => {
@@ -39,6 +43,21 @@ export default function App() {
   return (
     <ThemeContext.Provider value={themeValue}>
       <div className="min-h-screen">
+        {/* 有新版本時顯示頂部更新橫幅 */}
+        {updateAvailable ? (
+          <div className="sticky top-0 z-50 flex items-center justify-between gap-3 bg-brand-500 px-4 py-2.5 text-white shadow-md">
+            <p className="text-sm font-semibold">🆕 有新版本可用</p>
+            <Button
+              size="sm"
+              className="shrink-0 border-white/30 bg-white/20 text-white hover:bg-white/30"
+              onClick={applyUpdate}
+            >
+              <RefreshCw className="h-4 w-4" />
+              立即更新
+            </Button>
+          </div>
+        ) : null}
+
         <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 pb-8 pt-4 sm:px-6 lg:px-8">
           {page === "settings" ? (
             <SettingsPage
