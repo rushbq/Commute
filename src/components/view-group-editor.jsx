@@ -1,4 +1,4 @@
-import { Layers, Plus, Trash2, ZoomIn } from "lucide-react";
+import { Plus, Trash2, ZoomIn } from "lucide-react";
 import { MAX_SUB_VIEWS } from "../services/settings-validator";
 import { SubViewEditor } from "./sub-view-editor";
 import { Button } from "./ui/button";
@@ -55,11 +55,24 @@ export function ViewGroupEditor({ viewGroup, viewGroupIndex, moduleColor, onChan
     >
       {/* 群組標題列 */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            群組 {viewGroupIndex + 1}
+        <div className="flex items-center gap-2.5">
+          <span
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] text-xs font-bold text-white"
+            style={{ backgroundColor: moduleColor.border }}
+          >
+            {viewGroupIndex + 1}
           </span>
+          <div>
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: moduleColor.text }}
+            >
+              觀測群組
+            </p>
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-50 leading-tight">
+              {viewGroup.name || `群組 ${viewGroupIndex + 1}`}
+            </p>
+          </div>
         </div>
         {allowRemove ? (
           <button

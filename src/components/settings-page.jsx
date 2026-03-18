@@ -1,7 +1,7 @@
 import { LoaderCircle, Moon, Plus, RotateCcw, Save, Sun, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "../hooks/use-theme";
-import { validateSettings, createDefaultViewGroups } from "../services/settings-validator";
+import { validateSettings, createDefaultViewGroups, getModulePaletteColor } from "../services/settings-validator";
 import { ModuleEditor } from "./module-editor";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -15,13 +15,16 @@ const THEME_OPTIONS = [
 export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAndReload, homeHref }) {
   const { theme, setTheme } = useTheme();
   const [draft, setDraft] = useState(() => cloneSettings(settings));
+  const [activeTabId, setActiveTabId] = useState(() => settings?.modules?.[0]?.id || null);
   const [validationErrors, setValidationErrors] = useState([]);
   const [saveError, setSaveError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
-    setDraft(cloneSettings(settings));
+    const cloned = cloneSettings(settings);
+    setDraft(cloned);
+    setActiveTabId(cloned?.modules?.[0]?.id || null);
     setValidationErrors([]);
     setSaveError("");
     setIsSaving(false);
@@ -63,11 +66,16 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAn
         }
       ]
     }));
+    setActiveTabId(moduleId);
   }
 
   function removeModule(moduleId) {
     setDraft((current) => {
       const modules = current.modules.filter((moduleItem) => moduleItem.id !== moduleId);
+      // 切換到被刪除模組的前一個，或第一個
+      const removedIndex = current.modules.findIndex((m) => m.id === moduleId);
+      const nextModule = modules[Math.max(0, removedIndex - 1)];
+      setActiveTabId(nextModule?.id || null);
       return {
         ...current,
         defaultModuleId:
@@ -184,15 +192,41 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAn
         </CardContent>
       </Card>
 
-      {/* 模組清單 */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
+      {/* 模組 Tab 列 */}
+      <div className="grid gap-3">
+        <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">交通觀測模組</p>
         </div>
-        <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={addModule}>
-          <Plus className="h-4 w-4" />
-          新增模組
-        </Button>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {draft.modules.map((moduleItem, index) => {
+            const palette = getModulePaletteColor(index);
+            const isActive = moduleItem.id === activeTabId;
+            return (
+              <button
+                key={moduleItem.id}
+                type="button"
+                onClick={() => setActiveTabId(moduleItem.id)}
+                className="shrink-0 rounded-full border-2 px-4 py-1.5 text-sm font-semibold transition-colors"
+                style={
+                  isActive
+                    ? { borderColor: palette.border, backgroundColor: palette.border, color: "#fff" }
+                    : { borderColor: `${palette.border}50`, color: palette.text }
+                }
+              >
+                {moduleItem.name || `模組 ${index + 1}`}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={addModule}
+            className="shrink-0 flex items-center gap-1.5 rounded-full border-2 border-dashed border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-400 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-slate-600 dark:text-slate-500 dark:hover:border-brand-500 dark:hover:text-brand-400"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            新增
+          </button>
+        </div>
       </div>
 
       {validationErrors.length ? (
@@ -212,21 +246,23 @@ export function SettingsPage({ settings, onSave, onResetToDefaults, onClearAllAn
         </div>
       ) : null}
 
-      <div className="space-y-5">
+      <div>
         {draft.modules.map((moduleItem, index) => (
-          <ModuleEditor
-            key={moduleItem.id}
-            moduleItem={moduleItem}
-            moduleIndex={index}
-            onChange={(updater) => updateModule(moduleItem.id, updater)}
-            onRemove={() => removeModule(moduleItem.id)}
-            allowRemove={draft.modules.length > 1}
-          />
+          moduleItem.id === activeTabId ? (
+            <ModuleEditor
+              key={moduleItem.id}
+              moduleItem={moduleItem}
+              moduleIndex={index}
+              onChange={(updater) => updateModule(moduleItem.id, updater)}
+              onRemove={() => removeModule(moduleItem.id)}
+              allowRemove={draft.modules.length > 1}
+            />
+          ) : null
         ))}
 
         {!draft.modules.length ? (
           <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
-            目前還沒有模組。可直接按上方的「新增模組」。
+            目前還沒有模組。可直接按上方的「＋ 新增」。
           </div>
         ) : null}
       </div>

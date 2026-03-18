@@ -25,11 +25,14 @@ export function SubViewEditor({ view, viewIndex, onChange, onRemove, allowRemove
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span
-            className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ backgroundColor: color }}
-          >
-            {viewIndex + 1}
+          <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+            <span
+              className="absolute inset-0 rotate-45 rounded-[3px]"
+              style={{ backgroundColor: color }}
+            />
+            <span className="relative z-10 text-[9px] font-bold text-white">
+              {viewIndex + 1}
+            </span>
           </span>
           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
             {isPrimary ? "主要觀測點" : `觀測點 ${viewIndex + 1}`}
